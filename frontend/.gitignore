@@ -5,4 +5,4 @@ dist/
 coverage/
 .vite/
 *.log
-.txt
+*.txt
