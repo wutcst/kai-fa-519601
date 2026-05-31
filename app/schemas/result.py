@@ -7,3 +7,7 @@ class Result(BaseModel, Generic[T]):
     code: int = 200
     message: str = "success"
     data: Optional[T] = None
+
+    @classmethod
+    def success(cls, data: T = None, message: str = "success"):
+        return cls(code=200, message=message, data=data)
