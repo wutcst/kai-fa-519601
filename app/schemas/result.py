@@ -11,3 +11,7 @@ class Result(BaseModel, Generic[T]):
     @classmethod
     def success(cls, data: T = None, message: str = "success"):
         return cls(code=200, message=message, data=data)
+
+    @classmethod
+    def error(cls, code: int, message: str):
+        return cls(code=code, message=message, data=None)
