@@ -7,11 +7,14 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.database import init_db
+from app.routers import player
+from app.utils.init_data import init_game_data
 
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
     await init_db()
+    await init_game_data()
     yield
 
 
@@ -28,6 +31,8 @@ app.add_middleware(
 upload_path = Path(settings.upload_dir)
 upload_path.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(upload_path)), name="uploads")
+
+app.include_router(player.router, prefix="/player", tags=["player"])
 
 
 if __name__ == "__main__":
