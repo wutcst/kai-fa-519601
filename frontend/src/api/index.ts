@@ -1,85 +1,115 @@
 import axios from 'axios'
 
+// 带 /api 前缀的 axios 实例
 const api = axios.create({
   baseURL: '/api',
   withCredentials: true,
 })
 
-api.interceptors.request.use((config) => {
+// 不带 /api 前缀的 axios 实例（用于 /player/back、/room/info、/backpack/* 等接口）
+const rawApi = axios.create({
+  baseURL: '',
+  withCredentials: true,
+})
+
+// 请求拦截器：自动注入 token
+const requestInterceptor = (config: any) => {
   const token = localStorage.getItem('token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
   return config
-})
+}
+
+api.interceptors.request.use(requestInterceptor)
+rawApi.interceptors.request.use(requestInterceptor)
+
+// ==================== 玩家模块 ====================
 
 export const playerApi = {
-  login: (data: { username: string; password: string }) => api.post('/player/login', data),
-  register: (data: FormData) => api.post('/player/register', data),
-  getInfo: () => {
-    const playerId = localStorage.getItem('playerId')
-    return api.post('/player/info', { player_id: Number(playerId) })
-  },
-  move: (direction: string) => {
-    const playerId = localStorage.getItem('playerId')
-    return api.post('/player/move', { player_id: Number(playerId), direction })
-  },
+  /** 登录 */
+  login: (data: { username: string; password: string }) =>
+    api.post('/player/login', data),
+
+  /** 注册（FormData 含头像文件） */
+  register: (data: FormData) =>
+    api.post('/player/register', data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+
+  /** 获取玩家详细信息 */
+  getInfo: (playerId: number) =>
+    api.post('/player/info', { playerId }),
+
+  /** 玩家移动 */
+  move: (playerId: number, direction: string) =>
+    api.post('/player/move', { playerId, direction }),
+
+  /** 获取在线玩家列表 */
   getList: () => api.get('/player/list'),
-  trans: () => {
-    const playerId = localStorage.getItem('playerId')
-    return api.post('/player/trans', { player_id: Number(playerId) })
-  },
-  back: () => {
-    const playerId = localStorage.getItem('playerId')
-    return api.post('/player/back', { player_id: Number(playerId) })
-  },
-  home: () => {
-    const playerId = localStorage.getItem('playerId')
-    return api.post('/player/home', { player_id: Number(playerId) })
-  },
+
+  /** 返回上一房间（无 /api 前缀） */
+  back: (playerId: number) =>
+    rawApi.post('/player/back', { playerId }),
+
+  /** 传送（无 /api 前缀，进入传送房间自动触发） */
+  trans: (playerId: number) =>
+    rawApi.post('/player/trans', { playerId }),
+
+  /** 回城（无 /api 前缀） */
+  home: (playerId: number) =>
+    rawApi.post('/player/home', { playerId }),
 }
+
+// ==================== 房间模块 ====================
 
 export const roomApi = {
-  getInfo: (roomId: number) => {
-    const playerId = localStorage.getItem('playerId')
-    return api.post('/room/info', { player_id: Number(playerId), room_id: roomId })
-  },
+  /** 获取房间信息（无 /api 前缀） */
+  getInfo: (roomId: number) =>
+    rawApi.post('/room/info', { roomId }),
 }
+
+// ==================== 背包模块 ====================
 
 export const backpackApi = {
-  getList: () => {
-    const playerId = localStorage.getItem('playerId')
-    return api.post('/backpack/list', { player_id: Number(playerId) })
-  },
-  pickItem: (itemId: number) => {
-    const playerId = localStorage.getItem('playerId')
-    return api.post('/backpack/pick', { player_id: Number(playerId), item_id: itemId })
-  },
-  dropItem: (itemId: number) => {
-    const playerId = localStorage.getItem('playerId')
-    return api.post('/backpack/throw', { player_id: Number(playerId), item_id: itemId })
-  },
-  useItem: (itemId: number) => {
-    const playerId = localStorage.getItem('playerId')
-    return api.post('/backpack/use', { player_id: Number(playerId), item_id: itemId })
-  },
+  /** 获取背包列表（无 /api 前缀） */
+  getList: (playerId: number) =>
+    rawApi.post('/backpack/list', { playerId }),
+
+  /** 拾取物品（无 /api 前缀） */
+  pickItem: (playerId: number, itemId: number) =>
+    rawApi.post('/backpack/pickup', { playerId, itemId }),
+
+  /** 丢弃物品（无 /api 前缀） */
+  dropItem: (playerId: number, itemId: number) =>
+    rawApi.post('/backpack/throw', { playerId, itemId }),
+
+  /** 使用物品（无 /api 前缀） */
+  useItem: (playerId: number, itemId: number) =>
+    rawApi.post('/backpack/use', { playerId, itemId }),
 }
 
+// ==================== 游戏存档模块 ====================
+
 export const gameApi = {
-  getList: () => {
-    const playerId = localStorage.getItem('playerId')
-    return api.post('/game/list', { player_id: Number(playerId) })
-  },
-  save: () => {
-    const playerId = localStorage.getItem('playerId')
-    return api.post('/game/save', { player_id: Number(playerId) })
-  },
-  read: (saveId: number) => api.post('/game/read', { save_id: saveId }),
-  delete: (saveId: number) => api.post('/game/delete', { save_id: saveId }),
-  new: () => {
-    const playerId = localStorage.getItem('playerId')
-    return api.post('/game/new', { player_id: Number(playerId) })
-  },
+  /** 获取存档列表 */
+  getList: () => api.get('/game/list'),
+
+  /** 创建新存档 */
+  save: (playerId: number) =>
+    api.post('/game/save', { playerId }),
+
+  /** 读取存档 */
+  read: (saveId: number) =>
+    api.post('/game/read', { saveId }),
+
+  /** 删除存档 */
+  delete: (saveId: number) =>
+    api.post('/game/delete', { saveId }),
+
+  /** 新建游戏 */
+  new: (playerId: number) =>
+    api.post('/game/new', { playerId }),
 }
 
 export default api

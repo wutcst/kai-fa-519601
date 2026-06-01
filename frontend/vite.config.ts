@@ -19,6 +19,18 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
+      '/player': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      '/room': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      '/backpack': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
     },
   },
 

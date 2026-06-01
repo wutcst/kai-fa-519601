@@ -6,3 +6,4 @@ coverage/
 .vite/
 *.log
 *.txt
+API_DOCUMENTATION.md
