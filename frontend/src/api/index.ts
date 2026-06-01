@@ -1,28 +1,19 @@
 import axios from 'axios'
 
-// 带 /api 前缀的 axios 实例
+// 统一 axios 实例（后端所有接口均无 /api 前缀）
 const api = axios.create({
-  baseURL: '/api',
-  withCredentials: true,
-})
-
-// 不带 /api 前缀的 axios 实例（用于 /player/back、/room/info、/backpack/* 等接口）
-const rawApi = axios.create({
   baseURL: '',
   withCredentials: true,
 })
 
 // 请求拦截器：自动注入 token
-const requestInterceptor = (config: any) => {
+api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
   return config
-}
-
-api.interceptors.request.use(requestInterceptor)
-rawApi.interceptors.request.use(requestInterceptor)
+})
 
 // ==================== 玩家模块 ====================
 
@@ -48,52 +39,53 @@ export const playerApi = {
   /** 获取在线玩家列表 */
   getList: () => api.get('/player/list'),
 
-  /** 返回上一房间（无 /api 前缀） */
+  /** 返回上一房间 */
   back: (playerId: number) =>
-    rawApi.post('/player/back', { playerId }),
+    api.post('/player/back', { playerId }),
 
-  /** 传送（无 /api 前缀，进入传送房间自动触发） */
+  /** 传送（随机房间） */
   trans: (playerId: number) =>
-    rawApi.post('/player/trans', { playerId }),
+    api.post('/player/trans', { playerId }),
 
-  /** 回城（无 /api 前缀） */
+  /** 回城（回到主城） */
   home: (playerId: number) =>
-    rawApi.post('/player/home', { playerId }),
+    api.post('/player/home', { playerId }),
 }
 
 // ==================== 房间模块 ====================
 
 export const roomApi = {
-  /** 获取房间信息（无 /api 前缀） */
+  /** 获取房间信息 */
   getInfo: (roomId: number) =>
-    rawApi.post('/room/info', { roomId }),
+    api.post('/room/info', { roomId }),
 }
 
 // ==================== 背包模块 ====================
 
 export const backpackApi = {
-  /** 获取背包列表（无 /api 前缀） */
+  /** 获取背包列表 */
   getList: (playerId: number) =>
-    rawApi.post('/backpack/list', { playerId }),
+    api.post('/backpack/list', { playerId }),
 
-  /** 拾取物品（无 /api 前缀） */
+  /** 拾取物品 */
   pickItem: (playerId: number, itemId: number) =>
-    rawApi.post('/backpack/pickup', { playerId, itemId }),
+    api.post('/backpack/pick', { playerId, itemId }),
 
-  /** 丢弃物品（无 /api 前缀） */
+  /** 丢弃物品 */
   dropItem: (playerId: number, itemId: number) =>
-    rawApi.post('/backpack/throw', { playerId, itemId }),
+    api.post('/backpack/throw', { playerId, itemId }),
 
-  /** 使用物品（无 /api 前缀） */
+  /** 使用物品 */
   useItem: (playerId: number, itemId: number) =>
-    rawApi.post('/backpack/use', { playerId, itemId }),
+    api.post('/backpack/use', { playerId, itemId }),
 }
 
 // ==================== 游戏存档模块 ====================
 
 export const gameApi = {
   /** 获取存档列表 */
-  getList: () => api.get('/game/list'),
+  getList: (playerId: number) =>
+    api.post('/game/list', { playerId }),
 
   /** 创建新存档 */
   save: (playerId: number) =>
