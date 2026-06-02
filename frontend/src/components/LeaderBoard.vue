@@ -2,10 +2,10 @@
   <div class="leaderboard">
     <h4>排行榜</h4>
     <ul>
-      <li v-for="(p, idx) in players" :key="p.player_id">
+      <li v-for="(p, idx) in players" :key="p.playerId">
         <span class="rank">{{ idx + 1 }}</span>
-        <span class="name">{{ p.player_name }}</span>
-        <span class="score">{{ p.player_score }}</span>
+        <span class="name">{{ p.playerName }}</span>
+        <span class="score">{{ p.playerScore }}</span>
       </li>
     </ul>
   </div>
@@ -22,7 +22,7 @@ async function refresh() {
   const res = await playerApi.getList()
   if (res.data.code === 200) {
     players.value = (res.data.data || []).sort(
-      (a: any, b: any) => b.player_score - a.player_score,
+      (a: any, b: any) => b.playerScore - a.playerScore,
     )
   }
 }

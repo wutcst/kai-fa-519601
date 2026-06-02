@@ -1,16 +1,16 @@
 <template>
   <div class="player-info">
     <div class="avatar">
-      <img v-if="player.player_avatar_url" :src="player.player_avatar_url" alt="avatar" />
-      <div v-else class="avatar-placeholder">{{ player.player_name?.charAt(0) }}</div>
+      <img v-if="player.playerAvatarUrl" :src="player.playerAvatarUrl" alt="avatar" />
+      <div v-else class="avatar-placeholder">{{ player.playerName?.charAt(0) }}</div>
     </div>
     <div class="info">
-      <div class="name">{{ player.player_name }}</div>
-      <div class="stat">分数：{{ player.player_score }}</div>
+      <div class="name">{{ player.playerName }}</div>
+      <div class="stat">分数：{{ player.playerScore }}</div>
       <div class="stat">
-        体力：{{ player.player_stamina }}
+        体力：{{ player.playerStamina }}
         <el-progress
-          :percentage="Math.min(100, (player.player_stamina / 200) * 100)"
+          :percentage="Math.min(100, (player.playerStamina / 200) * 100)"
           :stroke-width="8"
           :show-text="false"
         />
@@ -26,7 +26,8 @@ import { playerApi } from '@/api'
 const player = ref<any>({})
 
 async function refresh() {
-  const res = await playerApi.getInfo()
+  const playerId = Number(localStorage.getItem('playerId'))
+  const res = await playerApi.getInfo(playerId)
   if (res.data.code === 200) player.value = res.data.data
 }
 
