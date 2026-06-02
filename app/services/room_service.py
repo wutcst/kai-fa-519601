@@ -29,3 +29,7 @@ async def get_room_info(db: AsyncSession, room_id: int):
             RoomInfoResponse(room_id=room.room_id, room_name=room.room_name, item_list=[]),
             "no items in room",
         )
+
+    # 3. 提取物品 ID 列表，批量加载物品详情
+    item_ids = [r.item_id for r in relations]
+    items = (await db.execute(select(Item).where(Item.item_id.in_(item_ids)))).scalars().all()
