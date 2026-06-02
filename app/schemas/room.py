@@ -14,3 +14,8 @@ class ItemDTO(BaseModel):
     item_name: str
     item_size: int
     item_value: int
+
+class RoomInfoResponse(BaseModel):
+    room_id: int
+    room_name: str
+    item_list: list[ItemDTO] = []
