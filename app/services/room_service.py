@@ -15,4 +15,7 @@ async def get_room_info(db: AsyncSession, room_id: int):
     """
     查询指定房间的信息以及房间内的物品列表
     """
-    pass
+    # 1. 尝试获取房间基础信息
+    room = await db.get(Room, room_id)
+    if not room:
+        return Result.error(404, "room not found")
