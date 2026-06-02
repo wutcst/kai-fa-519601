@@ -10,3 +10,9 @@ from app.models.item import Item
 from app.models.room_item import RoomItem
 from app.schemas.room import RoomInfoResponse, ItemDTO
 from app.schemas.result import Result
+
+async def get_room_info(db: AsyncSession, room_id: int):
+    """
+    查询指定房间的信息以及房间内的物品列表
+    """
+    pass
