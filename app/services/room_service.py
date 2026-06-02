@@ -19,3 +19,13 @@ async def get_room_info(db: AsyncSession, room_id: int):
     room = await db.get(Room, room_id)
     if not room:
         return Result.error(404, "room not found")
+    
+    # 2. 查询房间与物品的关联关系
+    stmt = select(RoomItem).where(RoomItem.room_id == room_id)
+    relations = (await db.execute(stmt)).scalars().all()
+
+    if not relations:
+        return Result.success(
+            RoomInfoResponse(room_id=room.room_id, room_name=room.room_name, item_list=[]),
+            "no items in room",
+        )
