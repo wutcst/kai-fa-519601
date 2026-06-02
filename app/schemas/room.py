@@ -6,5 +6,5 @@ from typing import Optional
 from pydantic import BaseModel
 
 class RoomInfoRequest(BaseModel):
-    player_id: Optional[int] = None
-    room_id: int
+    player_id: Optional[int] = None  # 可选：当前操作的玩家 ID
+    room_id: int                     # 必填：目标房间 ID
