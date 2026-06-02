@@ -33,3 +33,14 @@ async def get_room_info(db: AsyncSession, room_id: int):
     # 3. 提取物品 ID 列表，批量加载物品详情
     item_ids = [r.item_id for r in relations]
     items = (await db.execute(select(Item).where(Item.item_id.in_(item_ids)))).scalars().all()
+
+    # 4. 转换为前端所需的 DTO 格式
+    item_dtos = [
+        ItemDTO(item_id=i.item_id, item_name=i.item_name, item_size=i.item_size, item_value=i.item_value)
+        for i in items
+    ]
+
+    return Result.success(
+        RoomInfoResponse(room_id=room.room_id, room_name=room.room_name, item_list=item_dtos),
+        "success",
+    )
