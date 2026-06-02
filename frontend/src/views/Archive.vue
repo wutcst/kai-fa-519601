@@ -1,76 +1,386 @@
 <template>
-  <div class="archive-container">
-    <h2>存档管理</h2>
-    <div class="actions">
-      <el-button type="success" @click="startNewGame">新建游戏</el-button>
-      <el-button @click="loadSaves">刷新列表</el-button>
+  <div class="archive-shell">
+    <div class="profile-card">
+      <div class="card-head">
+        <div>
+          <p class="section-label">Explorer Profile</p>
+          <h2>当前角色入口</h2>
+        </div>
+        <el-button text class="logout-btn" @click="logout">退出登录</el-button>
+      </div>
+
+      <div v-if="loading" class="loading-state">
+        <div class="pulse pulse-avatar"></div>
+        <div class="pulse pulse-line"></div>
+        <div class="pulse pulse-line short"></div>
+      </div>
+
+      <template v-else-if="profile">
+        <div class="profile-hero">
+          <div class="avatar-frame">
+            <img v-if="profile.player_avatar_url" :src="profile.player_avatar_url" alt="avatar" />
+            <span v-else>{{ profileInitial }}</span>
+          </div>
+          <div class="hero-copy">
+            <h3>{{ profile.player_name }}</h3>
+            <p>角色已载入，可以继续查看当前玩家状态与后续接入计划。</p>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <article class="stat-card">
+            <span class="stat-label">分数</span>
+            <strong>{{ profile.player_score }}</strong>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">体力</span>
+            <strong>{{ profile.player_stamina }}</strong>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">房间</span>
+            <strong>#{{ profile.player_room_id }}</strong>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">背包 ID</span>
+            <strong>{{ profile.player_backpack_id ?? '未分配' }}</strong>
+          </article>
+        </div>
+
+        <div class="status-panel">
+          <div class="status-copy">
+            <p class="status-title">当前接入状态</p>
+            <p class="status-text">
+              玩家登录、注册、信息读取和排行榜已经接通。房间详情、移动、背包和存档接口仍待后端补齐，
+              所以下一步会继续改造游戏主界面，而不是继续保留失效按钮。
+            </p>
+          </div>
+          <div class="status-badges">
+            <span class="badge ready">player/login</span>
+            <span class="badge ready">player/info</span>
+            <span class="badge pending">room/* pending</span>
+            <span class="badge pending">game/* pending</span>
+          </div>
+        </div>
+
+        <div class="action-row">
+          <el-button type="primary" class="primary-action" disabled>
+            游戏主界面下一步适配
+          </el-button>
+          <el-button class="secondary-action" @click="loadProfile">刷新角色信息</el-button>
+        </div>
+      </template>
+
+      <div v-else class="empty-state">
+        <p>当前没有可展示的角色信息，请重新登录。</p>
+        <el-button type="primary" @click="logout">返回登录页</el-button>
+      </div>
     </div>
-    <el-table :data="saves" style="width: 100%; margin-top: 16px">
-      <el-table-column prop="save_id" label="存档ID" width="80" />
-      <el-table-column prop="save_time" label="保存时间" />
-      <el-table-column prop="player_score" label="分数" width="80" />
-      <el-table-column prop="player_stamina" label="体力" width="80" />
-      <el-table-column label="操作" width="160">
-        <template #default="{ row }">
-          <el-button size="small" type="primary" @click="readSave(row.save_id)">读取</el-button>
-          <el-button size="small" type="danger" @click="deleteSave(row.save_id)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { gameApi } from '@/api'
+import { playerApi } from '@/api'
+
+interface PlayerProfile {
+  player_id: number
+  player_name: string
+  player_avatar_url?: string
+  player_backpack_id?: number | null
+  player_score: number
+  player_room_id: number
+  player_stamina: number
+}
 
 const router = useRouter()
-const saves = ref<any[]>([])
+const loading = ref(true)
+const profile = ref<PlayerProfile | null>(null)
 
-async function loadSaves() {
-  const res = await gameApi.getList()
-  if (res.data.code === 200) saves.value = res.data.data || []
+const profileInitial = computed(() => {
+  const name = profile.value?.player_name?.trim()
+  return name ? name.charAt(0).toUpperCase() : 'Z'
+})
+
+async function loadProfile() {
+  const playerId = localStorage.getItem('playerId')
+  if (!playerId) {
+    ElMessage.warning('请先登录')
+    router.push('/welcome/login')
+    return
+  }
+
+  loading.value = true
+  try {
+    const res = await playerApi.getInfo()
+    if (res.data.code === 200) {
+      profile.value = res.data.data
+      return
+    }
+    profile.value = null
+    ElMessage.error(res.data.message || '读取角色信息失败')
+  } catch {
+    profile.value = null
+    ElMessage.error('读取角色信息失败，请稍后重试')
+  } finally {
+    loading.value = false
+  }
 }
 
-async function startNewGame() {
-  const res = await gameApi.new()
-  if (res.data.code === 200) router.push('/game')
-  else ElMessage.error(res.data.message)
+function logout() {
+  localStorage.removeItem('playerId')
+  router.push('/welcome/login')
 }
 
-async function readSave(saveId: number) {
-  const res = await gameApi.read(saveId)
-  if (res.data.code === 200) router.push('/game')
-  else ElMessage.error(res.data.message)
-}
-
-async function deleteSave(saveId: number) {
-  await gameApi.delete(saveId)
-  await loadSaves()
-}
-
-onMounted(loadSaves)
+onMounted(loadProfile)
 </script>
 
 <style scoped>
-.archive-container {
-  width: 600px;
-  padding: 32px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #fff;
+.archive-shell {
+  width: min(100%, 880px);
+}
+
+.profile-card {
+  padding: 30px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(246, 242, 228, 0.96), rgba(234, 230, 217, 0.94));
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  box-shadow:
+    0 22px 70px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  color: #1c2430;
+}
+
+.card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.section-label {
+  margin: 0 0 10px;
+  color: #5d7040;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 
 h2 {
-  margin-bottom: 16px;
+  margin: 0;
+  font-size: 34px;
+  line-height: 1;
 }
 
-.actions {
+.logout-btn {
+  color: #51606d;
+}
+
+.profile-hero {
+  margin-top: 28px;
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 20px;
+}
+
+.avatar-frame {
+  width: 88px;
+  height: 88px;
+  flex-shrink: 0;
+  border-radius: 24px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #5e6d40, #8f6238);
+  color: #f4f1de;
+  font-size: 34px;
+  font-weight: 700;
+  box-shadow: 0 16px 40px rgba(52, 61, 39, 0.28);
+}
+
+.avatar-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-copy h3 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.hero-copy p {
+  margin: 10px 0 0;
+  color: #56626d;
+  line-height: 1.7;
+}
+
+.stats-grid {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.stat-card {
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(29, 36, 50, 0.08);
+}
+
+.stat-label {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6c7882;
+}
+
+.stat-card strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.status-panel {
+  margin-top: 24px;
+  padding: 20px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.92), rgba(30, 44, 68, 0.9));
+  color: #edf1e6;
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 18px;
+}
+
+.status-title {
+  margin: 0;
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #c2ff72;
+}
+
+.status-text {
+  margin: 12px 0 0;
+  line-height: 1.8;
+  color: #c1ccd3;
+}
+
+.status-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 10px;
+}
+
+.badge {
+  padding: 10px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+}
+
+.badge.ready {
+  background: rgba(194, 255, 114, 0.16);
+  color: #e6f8c3;
+}
+
+.badge.pending {
+  background: rgba(255, 255, 255, 0.08);
+  color: #d3dce2;
+}
+
+.action-row {
+  margin-top: 24px;
+  display: flex;
+  gap: 12px;
+}
+
+.primary-action,
+.secondary-action {
+  min-height: 46px;
+  border-radius: 14px;
+}
+
+.primary-action {
+  min-width: 220px;
+}
+
+.loading-state {
+  margin-top: 28px;
+  display: grid;
+  gap: 14px;
+}
+
+.pulse {
+  border-radius: 18px;
+  background: linear-gradient(90deg, rgba(213, 206, 190, 0.8), rgba(242, 238, 228, 0.95), rgba(213, 206, 190, 0.8));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+
+.pulse-avatar {
+  width: 88px;
+  height: 88px;
+}
+
+.pulse-line {
+  width: 100%;
+  height: 22px;
+}
+
+.pulse-line.short {
+  width: 62%;
+}
+
+.empty-state {
+  margin-top: 28px;
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .status-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .profile-card {
+    padding: 22px;
+    border-radius: 22px;
+  }
+
+  .card-head,
+  .profile-hero,
+  .action-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  h2 {
+    font-size: 28px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
