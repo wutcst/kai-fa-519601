@@ -1,29 +1,57 @@
 <template>
-  <div class="leaderboard">
-    <h4>排行榜</h4>
-    <ul>
-      <li v-for="(p, idx) in players" :key="p.player_id">
-        <span class="rank">{{ idx + 1 }}</span>
-        <span class="name">{{ p.player_name }}</span>
-        <span class="score">{{ p.player_score }}</span>
+  <aside class="leaderboard-card">
+    <div class="card-head">
+      <div>
+        <p class="eyebrow">Live Rankings</p>
+        <h3>Explorer Board</h3>
+      </div>
+      <button class="refresh-link" type="button" @click="refresh">Refresh</button>
+    </div>
+
+    <div v-if="loading" class="list-state">
+      <div v-for="item in 5" :key="item" class="skeleton-row"></div>
+    </div>
+
+    <ul v-else-if="players.length" class="rank-list">
+      <li v-for="(player, index) in players" :key="player.player_id" class="rank-row">
+        <span class="rank-chip">{{ index + 1 }}</span>
+        <div class="player-line">
+          <strong>{{ player.player_name }}</strong>
+          <span>Room #{{ player.player_room_id ?? '-' }}</span>
+        </div>
+        <span class="score-value">{{ player.player_score }}</span>
       </li>
     </ul>
-  </div>
+
+    <div v-else class="empty-state">
+      <p>No ranking data available.</p>
+    </div>
+  </aside>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import { playerApi } from '@/api'
+import { onMounted, onUnmounted, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import { getMessage, getPayload, isSuccess, playerApi, type PlayerProfile } from '@/api'
 
-const players = ref<any[]>([])
-let timer: ReturnType<typeof setInterval>
+const players = ref<PlayerProfile[]>([])
+const loading = ref(false)
+let timer: ReturnType<typeof setInterval> | null = null
 
 async function refresh() {
-  const res = await playerApi.getList()
-  if (res.data.code === 200) {
-    players.value = (res.data.data || []).sort(
-      (a: any, b: any) => b.player_score - a.player_score,
-    )
+  loading.value = true
+  try {
+    const response = await playerApi.getList()
+    if (!isSuccess(response)) {
+      ElMessage.error(getMessage(response, 'Failed to load leaderboard'))
+      return
+    }
+
+    players.value = [...getPayload(response)].sort((left, right) => right.player_score - left.player_score)
+  } catch {
+    ElMessage.error('Failed to load leaderboard')
+  } finally {
+    loading.value = false
   }
 }
 
@@ -31,48 +59,133 @@ onMounted(() => {
   refresh()
   timer = setInterval(refresh, 5000)
 })
-onUnmounted(() => clearInterval(timer))
+
+onUnmounted(() => {
+  if (timer) clearInterval(timer)
+})
 </script>
 
 <style scoped>
-.leaderboard {
-  position: fixed;
-  right: 16px;
-  top: 16px;
-  width: 200px;
-  padding: 12px;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 8px;
-  color: #fff;
+.leaderboard-card {
+  padding: 22px;
+  border-radius: 26px;
+  background: linear-gradient(180deg, rgba(12, 18, 31, 0.94), rgba(18, 28, 46, 0.94));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #eef2e9;
 }
 
-h4 {
-  margin-bottom: 8px;
-  text-align: center;
-}
-
-ul {
-  list-style: none;
-  padding: 0;
-}
-
-li {
+.card-head {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  padding: 4px 0;
+  gap: 16px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #c2ff72;
+}
+
+.card-head h3 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.refresh-link {
+  border: none;
+  background: transparent;
+  color: #c2ff72;
+  cursor: pointer;
+}
+
+.rank-list {
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.rank-row {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.rank-chip {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(194, 255, 114, 0.14);
+  color: #f4f8e8;
+  font-weight: 700;
+}
+
+.player-line {
+  min-width: 0;
+}
+
+.player-line strong,
+.player-line span,
+.score-value {
+  display: block;
+}
+
+.player-line strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-line span {
+  margin-top: 4px;
+  color: #98a7b3;
   font-size: 13px;
 }
 
-.rank {
-  width: 20px;
-  color: #ffd700;
+.score-value {
+  color: #f0cb84;
+  font-size: 20px;
+  font-weight: 700;
 }
 
-.name {
-  flex: 1;
+.list-state {
+  margin-top: 22px;
+  display: grid;
+  gap: 10px;
 }
 
-.score {
-  color: #4fc3f7;
+.skeleton-row {
+  height: 62px;
+  border-radius: 18px;
+  background: linear-gradient(90deg, rgba(72, 87, 112, 0.7), rgba(123, 140, 160, 0.35), rgba(72, 87, 112, 0.7));
+  background-size: 200% 100%;
+  animation: shimmer 1.3s infinite linear;
+}
+
+.empty-state {
+  margin-top: 22px;
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+  color: #b9c5cb;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
 }
 </style>
