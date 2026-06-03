@@ -13,12 +13,12 @@
         </div>
       </div>
       <div class="room-info">
-        <h3>{{ currentRoom.room_name }}</h3>
+        <h3>{{ currentRoom.roomName }}</h3>
         <p>房间物品：</p>
         <ul>
-          <li v-for="item in currentRoom.item_list" :key="item.item_id">
-            {{ item.item_name }} (重量:{{ item.item_size }} 价值:{{ item.item_value }})
-            <el-button size="small" @click="pickItem(item.item_id)">拾取</el-button>
+          <li v-for="item in currentRoom.itemList" :key="item.itemId">
+            {{ item.itemName }} (重量:{{ item.itemSize }} 价值:{{ item.itemValue }})
+            <el-button size="small" @click="pickItem(item.itemId)">拾取</el-button>
           </li>
         </ul>
       </div>
@@ -33,24 +33,27 @@ import { playerApi, roomApi, backpackApi } from '@/api'
 import PlayerInfo from '@/components/PlayerInfo.vue'
 import LeaderBoard from '@/components/LeaderBoard.vue'
 
-const currentRoom = ref<any>({ room_name: '', item_list: [] })
+const currentRoom = ref<any>({ roomName: '', itemList: [] })
 
 async function loadRoom() {
-  const infoRes = await playerApi.getInfo()
+  const playerId = Number(localStorage.getItem('playerId'))
+  const infoRes = await playerApi.getInfo(playerId)
   if (infoRes.data.code === 200) {
-    const roomId = infoRes.data.data.player_room_id
+    const roomId = infoRes.data.data.playerRoomId
     const roomRes = await roomApi.getInfo(roomId)
     if (roomRes.data.code === 200) currentRoom.value = roomRes.data.data
   }
 }
 
 async function move(direction: string) {
-  const res = await playerApi.move(direction)
+  const playerId = Number(localStorage.getItem('playerId'))
+  const res = await playerApi.move(playerId, direction)
   if (res.data.code === 200) await loadRoom()
 }
 
 async function pickItem(itemId: number) {
-  await backpackApi.pickItem(itemId)
+  const playerId = Number(localStorage.getItem('playerId'))
+  await backpackApi.pickItem(playerId, itemId)
   await loadRoom()
 }
 
@@ -58,8 +61,14 @@ function handleKeydown(e: KeyboardEvent) {
   const map: Record<string, string> = { w: 'up', s: 'down', a: 'left', d: 'right' }
   const dir = map[e.key.toLowerCase()]
   if (dir) move(dir)
-  if (e.key.toLowerCase() === 'r') playerApi.back().then(loadRoom)
-  if (e.key.toLowerCase() === 'h') playerApi.home().then(loadRoom)
+  if (e.key.toLowerCase() === 'r') {
+    const playerId = Number(localStorage.getItem('playerId'))
+    playerApi.back(playerId).then(loadRoom)
+  }
+  if (e.key.toLowerCase() === 'h') {
+    const playerId = Number(localStorage.getItem('playerId'))
+    playerApi.home(playerId).then(loadRoom)
+  }
 }
 
 onMounted(() => {
