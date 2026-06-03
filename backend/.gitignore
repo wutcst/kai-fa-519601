@@ -7,3 +7,5 @@ dist/
 venv/
 .idea/
 .vscode/
+*.db
+uploads/
