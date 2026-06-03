@@ -150,6 +150,41 @@ onUnmounted(() => {
   margin-top: 4px;
   color: #98a7b3;
   font-size: 13px;
+  border-radius: 6px;
+  transition: all 0.25s ease;
+  animation: fadeIn 0.4s ease both;
+}
+
+li:nth-child(1) { animation-delay: 0.05s; }
+li:nth-child(2) { animation-delay: 0.1s; }
+li:nth-child(3) { animation-delay: 0.15s; }
+li:nth-child(4) { animation-delay: 0.2s; }
+li:nth-child(5) { animation-delay: 0.25s; }
+
+li:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateX(-2px);
+}
+
+/* 前三名特殊行背景 */
+li:nth-child(1) {
+  background: linear-gradient(90deg, rgba(255, 215, 0, 0.12), transparent);
+}
+li:nth-child(2) {
+  background: linear-gradient(90deg, rgba(192, 192, 192, 0.1), transparent);
+}
+li:nth-child(3) {
+  background: linear-gradient(90deg, rgba(205, 127, 50, 0.1), transparent);
+}
+
+li:nth-child(1):hover {
+  background: linear-gradient(90deg, rgba(255, 215, 0, 0.2), rgba(255, 255, 255, 0.04));
+}
+li:nth-child(2):hover {
+  background: linear-gradient(90deg, rgba(192, 192, 192, 0.18), rgba(255, 255, 255, 0.04));
+}
+li:nth-child(3):hover {
+  background: linear-gradient(90deg, rgba(205, 127, 50, 0.18), rgba(255, 255, 255, 0.04));
 }
 
 .score-value {

@@ -192,6 +192,115 @@ function handleAvatarChange(file: UploadFile, _files: UploadFiles) {
   }
 }
 
+// ==================== 屏幕状态 ====================
+const showStartScreen = ref(true)
+const showWelcome = ref(false)
+const showAuth = ref(false)
+
+function enterWelcome() {
+  showStartScreen.value = false
+  showWelcome.value = true
+}
+
+function startAuth() {
+  showWelcome.value = false
+  setTimeout(() => {
+    showAuth.value = true
+  }, 900)
+}
+
+function backToWelcome() {
+  showAuth.value = false
+  isRegisterMode.value = false
+  resetAvatarState()
+  setTimeout(() => {
+    showWelcome.value = true
+  }, 900)
+}
+
+function showGameIntro() {
+  ElMessage.info(
+    '《Zuulventurers》是一款沉浸式2D密室冒险解谜游戏，玩家扮演一名迷失在古代遗迹中的探险者，需要穿越连绵相扣的房间，破解机关，收集线索，最终在"最终祭坛"揭开遗迹背后的秘密。'
+  )
+}
+
+function addGlowEffect(event: MouseEvent) {
+  (event.target as HTMLElement).classList.add('glow-effect')
+}
+
+function removeGlowEffect(event: MouseEvent) {
+  (event.target as HTMLElement).classList.remove('glow-effect')
+}
+
+// ==================== 认证逻辑 ====================
+const loading = ref(false)
+const isRegisterMode = ref(false)
+
+const loginData = reactive({ username: '', password: '', rememberMe: false })
+const registerData = reactive({
+  username: '',
+  password: '',
+  confirm: '',
+})
+
+function toggleMode() {
+  isRegisterMode.value = !isRegisterMode.value
+  resetAvatarState()
+}
+
+// ==================== 头像上传 ====================
+const avatarInputRef = ref<HTMLInputElement | null>(null)
+const avatarFile = ref<File | null>(null)
+const avatarPreview = ref<string | null>(null)
+
+const isMobile = ref(window.innerWidth <= 768)
+function handleResize() {
+  isMobile.value = window.innerWidth <= 768
+}
+
+onMounted(() => window.addEventListener('resize', handleResize))
+onBeforeUnmount(() => window.removeEventListener('resize', handleResize))
+
+function triggerFileInput() {
+  avatarInputRef.value?.click()
+}
+
+function resetAvatarState() {
+  avatarFile.value = null
+  avatarPreview.value = null
+  if (avatarInputRef.value) avatarInputRef.value.value = ''
+}
+
+function validateFile(file: File): boolean {
+  const types = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp']
+  const max = 5 * 1024 * 1024
+  if (!types.includes(file.type)) {
+    ElMessage.warning('请选择有效的图片文件')
+    return false
+  }
+  if (file.size > max) {
+    ElMessage.warning('图片文件大小不能超过5MB')
+    return false
+  }
+  return true
+}
+
+function onAvatarChange(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file || !validateFile(file)) {
+    input.value = ''
+    return
+  }
+  avatarFile.value = file
+  const reader = new FileReader()
+  reader.onload = (ev) => {
+    avatarPreview.value = ev.target?.result as string
+  }
+  reader.readAsDataURL(file)
+}
+
+// ==================== 登录 ====================
 async function handleLogin() {
   if (!form.username.trim() || !form.password) {
     ElMessage.warning('Please enter a username and password')
@@ -221,6 +330,7 @@ async function handleLogin() {
   }
 }
 
+// ==================== 注册 ====================
 async function handleRegister() {
   if (!form.username.trim() || !form.password) {
     ElMessage.warning('Please enter a username and password')
