@@ -6,8 +6,8 @@
       <p class="aside-copy">
         {{
           mode === 'login'
-            ? 'Log in with an existing profile and continue from the current player shell.'
-            : 'Register a fresh explorer profile. Username, password, and an optional avatar are already supported by the backend.'
+            ? 'Use an existing explorer profile to reach the character entry screen and continue into the current game shell.'
+            : 'Create a new explorer with username, password, and an optional avatar upload supported by the backend.'
         }}
       </p>
 
@@ -28,8 +28,8 @@
       <div class="aside-panel">
         <template v-if="mode === 'login'">
           <div class="panel-kicker">Current Access</div>
-          <strong>玩家接口已接通</strong>
-          <p>登录、注册、读取角色信息与排行榜已可用，后续页面会继续接主界面和占位交互。</p>
+          <strong>Player endpoints are live</strong>
+          <p>Login, register, profile lookup, and leaderboard are available now. Room and inventory actions remain disabled until the backend adds those routes.</p>
         </template>
         <template v-else>
           <div class="avatar-preview-shell">
@@ -38,8 +38,8 @@
               <span v-else>{{ previewInitial }}</span>
             </div>
             <div class="avatar-copy">
-              <strong>{{ form.avatarName || '未选择头像' }}</strong>
-              <p>{{ form.avatarName ? '注册时将随表单上传头像文件。' : '头像可选，不上传也能完成注册。' }}</p>
+              <strong>{{ form.avatarName || 'No avatar selected' }}</strong>
+              <p>{{ form.avatarName ? 'The image will be uploaded with the registration form.' : 'Avatar is optional. You can register without uploading a file.' }}</p>
             </div>
           </div>
         </template>
@@ -50,35 +50,35 @@
       <div class="main-head">
         <div>
           <p class="main-kicker">{{ mode === 'login' ? 'Account Access' : 'Explorer Setup' }}</p>
-          <h3>{{ mode === 'login' ? '输入你的账号信息' : '填写角色注册信息' }}</h3>
+          <h3>{{ mode === 'login' ? 'Enter your account credentials' : 'Fill in the new explorer profile' }}</h3>
         </div>
         <button class="ghost-switch" type="button" @click="toggleMode">
-          {{ mode === 'login' ? '去注册' : '去登录' }}
+          {{ mode === 'login' ? 'Switch To Register' : 'Switch To Login' }}
         </button>
       </div>
 
       <el-form :model="form" label-width="0" class="auth-form" @submit.prevent>
         <el-form-item>
           <div class="field-stack">
-            <label>用户名</label>
-            <el-input v-model="form.username" placeholder="输入用户名" size="large" />
+            <label>Username</label>
+            <el-input v-model="form.username" placeholder="Enter username" size="large" />
           </div>
         </el-form-item>
 
         <el-form-item>
           <div class="field-stack">
-            <label>密码</label>
-            <el-input v-model="form.password" type="password" placeholder="输入密码" size="large" show-password />
+            <label>Password</label>
+            <el-input v-model="form.password" type="password" placeholder="Enter password" size="large" show-password />
           </div>
         </el-form-item>
 
         <el-form-item v-if="mode === 'register'">
           <div class="field-stack">
-            <label>确认密码</label>
+            <label>Confirm Password</label>
             <el-input
               v-model="form.confirmPassword"
               type="password"
-              placeholder="再次输入密码"
+              placeholder="Enter password again"
               size="large"
               show-password
             />
@@ -87,7 +87,7 @@
 
         <el-form-item v-if="mode === 'register'">
           <div class="field-stack">
-            <label>头像文件</label>
+            <label>Avatar File</label>
             <el-upload
               class="avatar-uploader"
               :auto-upload="false"
@@ -96,11 +96,11 @@
               :on-change="handleAvatarChange"
             >
               <div class="upload-box">
-                <div class="upload-icon">{{ form.avatarName ? '◎' : '+' }}</div>
+                <div class="upload-icon">{{ form.avatarName ? 'OK' : '+' }}</div>
                 <div class="upload-meta">
-                  <span class="upload-title">{{ form.avatarName ? '已选择头像文件' : '选择头像文件' }}</span>
+                  <span class="upload-title">{{ form.avatarName ? 'Avatar selected' : 'Choose avatar file' }}</span>
                   <span class="upload-file">
-                    {{ form.avatarName || '支持常见图片格式，可留空直接注册。' }}
+                    {{ form.avatarName || 'Common image formats are supported. You can leave this empty.' }}
                   </span>
                 </div>
               </div>
@@ -115,10 +115,10 @@
             :loading="submitting"
             @click="mode === 'login' ? handleLogin() : handleRegister()"
           >
-            {{ mode === 'login' ? '登录并进入' : '注册新账号' }}
+            {{ mode === 'login' ? 'Login And Continue' : 'Create Account' }}
           </el-button>
           <p class="action-note">
-            {{ mode === 'login' ? '登录成功后会进入角色入口页。' : '注册成功后会自动切回登录模式。' }}
+            {{ mode === 'login' ? 'A successful login takes you to the character entry screen.' : 'A successful registration switches you back to login mode.' }}
           </p>
         </div>
       </el-form>
@@ -127,17 +127,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import type { UploadFile, UploadFiles } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { playerApi } from '@/api'
+import { getMessage, getPayload, isSuccess, playerApi } from '@/api'
+import { setStoredPlayerId } from '@/utils/session'
 
 type Mode = 'login' | 'register'
 
 const router = useRouter()
 const mode = ref<Mode>('login')
 const submitting = ref(false)
+const avatarPreviewUrl = ref('')
+
 const form = reactive({
   username: '',
   password: '',
@@ -146,18 +149,23 @@ const form = reactive({
   avatarName: '',
 })
 
-const avatarPreviewUrl = ref('')
-
 const previewInitial = computed(() => {
   const source = form.username.trim() || 'Z'
   return source.charAt(0).toUpperCase()
 })
 
+function revokeAvatarPreview() {
+  if (avatarPreviewUrl.value) {
+    URL.revokeObjectURL(avatarPreviewUrl.value)
+    avatarPreviewUrl.value = ''
+  }
+}
+
 function resetRegisterFields() {
   form.confirmPassword = ''
   form.avatarFile = null
   form.avatarName = ''
-  avatarPreviewUrl.value = ''
+  revokeAvatarPreview()
 }
 
 function setMode(nextMode: Mode) {
@@ -173,68 +181,81 @@ function toggleMode() {
 function handleAvatarChange(file: UploadFile, _files: UploadFiles) {
   form.avatarFile = file.raw ?? null
   form.avatarName = file.name
+  revokeAvatarPreview()
   if (file.raw) {
     avatarPreviewUrl.value = URL.createObjectURL(file.raw)
-  } else {
-    avatarPreviewUrl.value = ''
   }
 }
 
 async function handleLogin() {
-  if (!form.username || !form.password) {
-    ElMessage.warning('请输入用户名和密码')
+  if (!form.username.trim() || !form.password) {
+    ElMessage.warning('Please enter a username and password')
     return
   }
 
   submitting.value = true
   try {
-    const res = await playerApi.login({ username: form.username, password: form.password })
-    if (res.data.code === 200) {
-      localStorage.setItem('playerId', String(res.data.data.player_id))
-      ElMessage.success('登录成功')
-      router.push('/welcome/archive')
+    const response = await playerApi.login({
+      username: form.username.trim(),
+      password: form.password,
+    })
+
+    if (!isSuccess(response)) {
+      ElMessage.error(getMessage(response, 'Login failed'))
       return
     }
-    ElMessage.error(res.data.message)
+
+    const payload = getPayload(response)
+    setStoredPlayerId(payload.player_id)
+    ElMessage.success('Login successful')
+    await router.push('/welcome/archive')
   } catch {
-    ElMessage.error('登录失败，请稍后重试')
+    ElMessage.error('Login failed, please try again later')
   } finally {
     submitting.value = false
   }
 }
 
 async function handleRegister() {
-  if (!form.username || !form.password) {
-    ElMessage.warning('请输入用户名和密码')
-    return
-  }
-  if (form.password !== form.confirmPassword) {
-    ElMessage.warning('两次输入的密码不一致')
+  if (!form.username.trim() || !form.password) {
+    ElMessage.warning('Please enter a username and password')
     return
   }
 
-  const fd = new FormData()
-  fd.append('playerName', form.username)
-  fd.append('password', form.password)
+  if (form.password !== form.confirmPassword) {
+    ElMessage.warning('The two passwords do not match')
+    return
+  }
+
+  const formData = new FormData()
+  formData.append('playerName', form.username.trim())
+  formData.append('password', form.password)
   if (form.avatarFile) {
-    fd.append('avatar', form.avatarFile)
+    formData.append('avatar', form.avatarFile)
   }
 
   submitting.value = true
   try {
-    const res = await playerApi.register(fd)
-    if (res.data.code === 200) {
-      ElMessage.success('注册成功，请使用新账号登录')
-      setMode('login')
+    const response = await playerApi.register(formData)
+    if (!isSuccess(response)) {
+      ElMessage.error(getMessage(response, 'Registration failed'))
       return
     }
-    ElMessage.error(res.data.message)
+
+    ElMessage.success('Registration successful, please sign in with the new account')
+    form.password = ''
+    resetRegisterFields()
+    setMode('login')
   } catch {
-    ElMessage.error('注册失败，请稍后重试')
+    ElMessage.error('Registration failed, please try again later')
   } finally {
     submitting.value = false
   }
 }
+
+onBeforeUnmount(() => {
+  revokeAvatarPreview()
+})
 </script>
 
 <style scoped>
@@ -363,7 +384,10 @@ async function handleRegister() {
 }
 
 .auth-main {
-  padding: 30px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
 }
 
 .main-head {
@@ -371,12 +395,11 @@ async function handleRegister() {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 26px;
 }
 
 .main-kicker {
-  margin: 0 0 8px;
-  color: #718070;
+  margin: 0 0 10px;
+  color: #6f7a4d;
   font-size: 12px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -384,45 +407,35 @@ async function handleRegister() {
 
 .main-head h3 {
   margin: 0;
-  font-size: 30px;
-  line-height: 1;
+  font-size: 28px;
+  line-height: 1.1;
 }
 
 .ghost-switch {
-  padding: 10px 14px;
-  border-radius: 12px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
   border: 1px solid rgba(29, 36, 50, 0.12);
-  background: rgba(255, 255, 255, 0.62);
-  color: #324252;
+  background: rgba(255, 255, 255, 0.7);
+  color: #39424d;
   cursor: pointer;
 }
 
-.auth-form :deep(.el-form-item) {
-  margin-bottom: 16px;
+.auth-form {
+  display: grid;
+  gap: 8px;
 }
 
 .field-stack {
   width: 100%;
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .field-stack label {
   font-size: 13px;
-  color: #576572;
-}
-
-.auth-form :deep(.el-input__wrapper) {
-  min-height: 52px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 0 0 1px rgba(29, 36, 50, 0.08) inset;
-}
-
-.auth-form :deep(.el-input__wrapper.is-focus) {
-  box-shadow:
-    0 0 0 1px rgba(93, 112, 64, 0.52) inset,
-    0 0 0 4px rgba(194, 255, 114, 0.12);
+  font-weight: 600;
+  color: #4a5560;
 }
 
 .avatar-uploader {
@@ -431,66 +444,58 @@ async function handleRegister() {
 
 .upload-box {
   width: 100%;
-  padding: 14px 16px;
+  min-height: 82px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px dashed rgba(29, 36, 50, 0.18);
+  background: rgba(255, 255, 255, 0.56);
   display: flex;
   align-items: center;
   gap: 14px;
-  border-radius: 18px;
-  border: 1px dashed rgba(29, 36, 50, 0.2);
-  background: rgba(255, 255, 255, 0.6);
 }
 
 .upload-icon {
-  width: 38px;
-  height: 38px;
-  flex-shrink: 0;
-  border-radius: 12px;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #566b2f, #7f5b35);
-  color: #f5f2e5;
-  font-size: 18px;
+  background: linear-gradient(135deg, rgba(94, 109, 64, 0.9), rgba(143, 98, 56, 0.9));
+  color: #f8f3e4;
+  font-weight: 700;
 }
 
 .upload-meta {
   display: grid;
-  gap: 3px;
+  gap: 6px;
 }
 
 .upload-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #243140;
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .upload-file {
+  color: #6b7177;
   font-size: 13px;
-  color: #66727a;
 }
 
 .action-group {
-  margin-top: 10px;
+  margin-top: 8px;
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .submit-btn {
-  width: 100%;
-  min-height: 52px;
-  border: none;
+  min-height: 48px;
   border-radius: 16px;
-  background: linear-gradient(135deg, #566b2f, #7f5b35);
-  box-shadow: 0 16px 34px rgba(86, 107, 47, 0.24);
-}
-
-.submit-btn:hover {
-  filter: brightness(1.04);
+  font-weight: 600;
 }
 
 .action-note {
-  margin: 0;
+  color: #6d7379;
   font-size: 13px;
-  color: #6b7680;
+  line-height: 1.6;
 }
 
 @media (max-width: 860px) {
@@ -498,34 +503,19 @@ async function handleRegister() {
     grid-template-columns: 1fr;
   }
 
-  .auth-aside,
   .auth-main {
-    padding: 24px;
-  }
-
-  .aside-panel {
-    margin-top: 0;
+    padding: 26px;
   }
 }
 
 @media (max-width: 640px) {
-  .auth-card {
-    border-radius: 22px;
-  }
-
   .auth-aside,
   .auth-main {
-    padding: 20px;
-  }
-
-  .auth-aside h2,
-  .main-head h3 {
-    font-size: 28px;
+    padding: 22px;
   }
 
   .main-head {
     flex-direction: column;
-    align-items: stretch;
   }
 
   .ghost-switch {

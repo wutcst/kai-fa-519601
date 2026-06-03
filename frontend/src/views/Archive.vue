@@ -4,9 +4,9 @@
       <div class="card-head">
         <div>
           <p class="section-label">Explorer Profile</p>
-          <h2>当前角色入口</h2>
+          <h2>Current Character Gate</h2>
         </div>
-        <el-button text class="logout-btn" @click="logout">退出登录</el-button>
+        <el-button text class="logout-btn" @click="logout">Sign Out</el-button>
       </div>
 
       <div v-if="loading" class="loading-state">
@@ -23,56 +23,58 @@
           </div>
           <div class="hero-copy">
             <h3>{{ profile.player_name }}</h3>
-            <p>角色已载入，可以继续查看当前玩家状态与后续接入计划。</p>
+            <p>Your explorer profile is loaded. This version lets you enter the game shell and view live player data and rankings.</p>
           </div>
         </div>
 
         <div class="stats-grid">
           <article class="stat-card">
-            <span class="stat-label">分数</span>
+            <span class="stat-label">Score</span>
             <strong>{{ profile.player_score }}</strong>
           </article>
           <article class="stat-card">
-            <span class="stat-label">体力</span>
+            <span class="stat-label">Stamina</span>
             <strong>{{ profile.player_stamina }}</strong>
           </article>
           <article class="stat-card">
-            <span class="stat-label">房间</span>
-            <strong>#{{ profile.player_room_id }}</strong>
+            <span class="stat-label">Room</span>
+            <strong>#{{ profile.player_room_id ?? '-' }}</strong>
           </article>
           <article class="stat-card">
-            <span class="stat-label">背包 ID</span>
-            <strong>{{ profile.player_backpack_id ?? '未分配' }}</strong>
+            <span class="stat-label">Backpack ID</span>
+            <strong>{{ profile.player_backpack_id ?? 'Unassigned' }}</strong>
           </article>
         </div>
 
         <div class="status-panel">
           <div class="status-copy">
-            <p class="status-title">当前接入状态</p>
+            <p class="status-title">Current Integration</p>
             <p class="status-text">
-              玩家登录、注册、信息读取和排行榜已经接通。房间详情、移动、背包和存档接口仍待后端补齐，
-              所以下一步会继续改造游戏主界面，而不是继续保留失效按钮。
+              Login, registration, profile lookup, and the player leaderboard are already connected. Room details, movement, inventory, and save flows still wait on backend routes, so the game page stays visible but intentionally non-interactive.
             </p>
           </div>
           <div class="status-badges">
             <span class="badge ready">player/login</span>
+            <span class="badge ready">player/register</span>
             <span class="badge ready">player/info</span>
-            <span class="badge pending">room/* pending</span>
-            <span class="badge pending">game/* pending</span>
+            <span class="badge ready">player/list</span>
+            <span class="badge pending">room pending</span>
+            <span class="badge pending">backpack pending</span>
+            <span class="badge pending">game pending</span>
           </div>
         </div>
 
         <div class="action-row">
-          <el-button type="primary" class="primary-action" disabled>
-            游戏主界面下一步适配
+          <el-button type="primary" class="primary-action" @click="enterGame">
+            Enter Adventure Shell
           </el-button>
-          <el-button class="secondary-action" @click="loadProfile">刷新角色信息</el-button>
+          <el-button class="secondary-action" @click="loadProfile">Refresh Profile</el-button>
         </div>
       </template>
 
       <div v-else class="empty-state">
-        <p>当前没有可展示的角色信息，请重新登录。</p>
-        <el-button type="primary" @click="logout">返回登录页</el-button>
+        <p>No character profile is available. Please sign in again.</p>
+        <el-button type="primary" @click="logout">Back To Login</el-button>
       </div>
     </div>
   </div>
@@ -82,17 +84,8 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { playerApi } from '@/api'
-
-interface PlayerProfile {
-  player_id: number
-  player_name: string
-  player_avatar_url?: string
-  player_backpack_id?: number | null
-  player_score: number
-  player_room_id: number
-  player_stamina: number
-}
+import { getMessage, getPayload, isSuccess, playerApi, type PlayerProfile } from '@/api'
+import { clearStoredPlayerId, getStoredPlayerId } from '@/utils/session'
 
 const router = useRouter()
 const loading = ref(true)
@@ -104,33 +97,38 @@ const profileInitial = computed(() => {
 })
 
 async function loadProfile() {
-  const playerId = localStorage.getItem('playerId')
+  const playerId = getStoredPlayerId()
   if (!playerId) {
-    ElMessage.warning('请先登录')
-    router.push('/welcome/login')
+    ElMessage.warning('Please sign in first')
+    await router.push('/welcome/login')
     return
   }
 
   loading.value = true
   try {
-    const res = await playerApi.getInfo()
-    if (res.data.code === 200) {
-      profile.value = res.data.data
+    const response = await playerApi.getInfo(playerId)
+    if (!isSuccess(response)) {
+      profile.value = null
+      ElMessage.error(getMessage(response, 'Failed to load character profile'))
       return
     }
-    profile.value = null
-    ElMessage.error(res.data.message || '读取角色信息失败')
+
+    profile.value = getPayload(response)
   } catch {
     profile.value = null
-    ElMessage.error('读取角色信息失败，请稍后重试')
+    ElMessage.error('Failed to load character profile, please try again later')
   } finally {
     loading.value = false
   }
 }
 
-function logout() {
-  localStorage.removeItem('playerId')
-  router.push('/welcome/login')
+async function enterGame() {
+  await router.push('/game')
+}
+
+async function logout() {
+  clearStoredPlayerId()
+  await router.push('/welcome/login')
 }
 
 onMounted(loadProfile)
@@ -365,22 +363,16 @@ h2 {
 @media (max-width: 640px) {
   .profile-card {
     padding: 22px;
-    border-radius: 22px;
   }
 
-  .card-head,
   .profile-hero,
-  .action-row {
+  .action-row,
+  .card-head {
     flex-direction: column;
-    align-items: stretch;
   }
 
-  h2 {
-    font-size: 28px;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
+  .action-row > * {
+    width: 100%;
   }
 }
 </style>
