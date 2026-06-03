@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.database import init_db
-from app.routers import player, room  # ✅ 这里加上了 room 路由
+from app.routers import player, room
 from app.utils.init_data import init_game_data
 
 
@@ -33,8 +33,8 @@ upload_path.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(upload_path)), name="uploads")
 
 app.include_router(player.router, prefix="/player", tags=["player"])
-# ✅ 房间路由模块挂载，用于支撑游戏内场景和物品的渲染数据交互
 app.include_router(room.router, prefix="/room", tags=["room"])
+
 
 if __name__ == "__main__":
     import uvicorn
