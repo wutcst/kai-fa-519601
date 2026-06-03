@@ -84,8 +84,9 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getMessage, getPayload, isSuccess, playerApi, type PlayerProfile } from '@/api'
 import { clearStoredPlayerId, getStoredPlayerId } from '@/utils/session'
+import { loadStoredPlayerProfile } from '@/utils/current-player'
+import type { PlayerProfile } from '@/api'
 
 const router = useRouter()
 const loading = ref(true)
@@ -99,24 +100,29 @@ const profileInitial = computed(() => {
 async function loadProfile() {
   const playerId = getStoredPlayerId()
   if (!playerId) {
+    loading.value = false
     ElMessage.warning('Please sign in first')
-    await router.push('/welcome/login')
+    await router.replace('/welcome/login')
     return
   }
 
   loading.value = true
   try {
-    const response = await playerApi.getInfo(playerId)
-    if (!isSuccess(response)) {
+    const result = await loadStoredPlayerProfile()
+    if (result.invalidSession) {
       profile.value = null
-      ElMessage.error(getMessage(response, 'Failed to load character profile'))
+      ElMessage.warning('Stored explorer session is no longer valid. Please sign in again.')
+      await router.replace('/welcome/login')
       return
     }
 
-    profile.value = getPayload(response)
-  } catch {
-    profile.value = null
-    ElMessage.error('Failed to load character profile, please try again later')
+    if (!result.profile) {
+      profile.value = null
+      ElMessage.error(result.message || 'Failed to load character profile')
+      return
+    }
+
+    profile.value = result.profile
   } finally {
     loading.value = false
   }

@@ -8,7 +8,7 @@ const api = axios.create({
 export interface ApiResult<T> {
   code: number
   message: string
-  data: T
+  data: T | null
 }
 
 export interface PlayerProfile {
@@ -34,7 +34,11 @@ export function getMessage<T>(response: AxiosResponse<ApiResult<T>>, fallback = 
 }
 
 export function getPayload<T>(response: AxiosResponse<ApiResult<T>>) {
-  return response.data.data
+  const payload = response.data.data
+  if (payload === null) {
+    throw new Error('Missing response payload')
+  }
+  return payload
 }
 
 export const playerApi = {

@@ -9,13 +9,56 @@
       <p class="eyebrow">Terminal Expedition</p>
       <h1>Zuulventurers</h1>
       <p class="hero-copy">
-        Enter the labyrinth, register your explorer, and step into a playable game shell that can
-        evolve with the backend.
+        Enter the labyrinth, register your explorer, and step into a player-aware game shell that
+        now respects the real backend boundary.
       </p>
+
       <div class="hero-meta">
-        <span>100 Rooms</span>
-        <span>Player System Online</span>
-        <span>Adventure UI Refresh</span>
+        <span>100 Rooms Planned</span>
+        <span>Player APIs Online</span>
+        <span>Session-Aware Entry</span>
+      </div>
+
+      <div class="hero-actions">
+        <template v-if="hasSession">
+          <button class="hero-button primary" type="button" @click="goArchive">Continue Session</button>
+          <button class="hero-button secondary" type="button" @click="goGame">Open Game Shell</button>
+          <button class="hero-link" type="button" @click="switchAccount">Switch Account</button>
+        </template>
+        <template v-else>
+          <button class="hero-button primary" type="button" @click="goLogin">Open Login</button>
+          <button class="hero-button secondary" type="button" @click="goRegister">Create Explorer</button>
+        </template>
+      </div>
+
+      <div class="session-panel" :class="{ active: hasSession }">
+        <template v-if="hasSession">
+          <p class="session-kicker">Local Session</p>
+          <strong>Explorer access card detected</strong>
+          <p>
+            A local `playerId` is present on this machine. You can resume at the character gate,
+            jump straight into the current game shell, or switch to another account.
+          </p>
+        </template>
+        <template v-else>
+          <p class="session-kicker">Guest State</p>
+          <strong>No active explorer session</strong>
+          <p>
+            Start from login if you already have an account, or open registration to create a new
+            explorer profile with an optional avatar.
+          </p>
+        </template>
+      </div>
+
+      <div class="feature-list">
+        <article>
+          <span>Live now</span>
+          <strong>Login, register, profile lookup, leaderboard</strong>
+        </article>
+        <article>
+          <span>Staged next</span>
+          <strong>Room details, movement, backpack, save system</strong>
+        </article>
       </div>
     </section>
 
@@ -25,7 +68,52 @@
   </div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { clearStoredPlayerId, getStoredPlayerId } from '@/utils/session'
+
+const route = useRoute()
+const router = useRouter()
+const hasSession = ref(false)
+
+function syncSessionState() {
+  hasSession.value = getStoredPlayerId() !== null
+}
+
+async function goLogin() {
+  await router.push('/welcome/login')
+}
+
+async function goRegister() {
+  await router.push({
+    path: '/welcome/login',
+    query: { mode: 'register' },
+  })
+}
+
+async function goArchive() {
+  await router.push('/welcome/archive')
+}
+
+async function goGame() {
+  await router.push('/game')
+}
+
+async function switchAccount() {
+  clearStoredPlayerId()
+  syncSessionState()
+  await router.push('/welcome/login')
+}
+
+watch(
+  () => route.fullPath,
+  () => {
+    syncSessionState()
+  },
+  { immediate: true },
+)
+</script>
 
 <style scoped>
 .welcome-shell {
@@ -39,7 +127,7 @@
   min-height: 100%;
   padding: 32px;
   display: grid;
-  grid-template-columns: minmax(260px, 520px) minmax(320px, 460px);
+  grid-template-columns: minmax(280px, 560px) minmax(320px, 460px);
   align-items: center;
   justify-content: center;
   gap: 36px;
@@ -108,10 +196,12 @@
     0 24px 80px rgba(0, 0, 0, 0.34),
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
   color: var(--text);
+  display: grid;
+  gap: 24px;
 }
 
 .eyebrow {
-  margin: 0 0 14px;
+  margin: 0;
   font-size: 13px;
   letter-spacing: 0.24em;
   text-transform: uppercase;
@@ -126,7 +216,7 @@ h1 {
 }
 
 .hero-copy {
-  margin: 22px 0 0;
+  margin: 0;
   max-width: 28ch;
   font-size: 17px;
   line-height: 1.7;
@@ -134,7 +224,6 @@ h1 {
 }
 
 .hero-meta {
-  margin-top: 30px;
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -147,6 +236,88 @@ h1 {
   background: var(--accent-soft);
   color: var(--text);
   font-size: 13px;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.hero-button,
+.hero-link {
+  min-height: 46px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.hero-button {
+  padding: 0 18px;
+  border: 1px solid transparent;
+  font-weight: 600;
+}
+
+.hero-button.primary {
+  background: linear-gradient(135deg, #c2ff72, #dfbd7e);
+  color: #172131;
+}
+
+.hero-button.secondary {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+}
+
+.hero-link {
+  padding: 0 6px;
+  border: none;
+  background: transparent;
+  color: var(--accent);
+}
+
+.session-panel {
+  padding: 18px 20px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.session-panel.active {
+  border-color: rgba(194, 255, 114, 0.18);
+  background: rgba(194, 255, 114, 0.08);
+}
+
+.session-kicker,
+.feature-list span {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.session-panel strong,
+.feature-list strong {
+  display: block;
+  margin-top: 8px;
+}
+
+.session-panel p:last-child {
+  margin: 10px 0 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.feature-list {
+  display: grid;
+  gap: 12px;
+}
+
+.feature-list article {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .auth-stage {
@@ -181,11 +352,14 @@ h1 {
     border-radius: 20px;
   }
 
-  .hero-meta {
+  .hero-meta,
+  .hero-actions {
     gap: 8px;
   }
 
-  .hero-meta span {
+  .hero-meta span,
+  .hero-button,
+  .hero-link {
     width: 100%;
     text-align: center;
   }

@@ -57,9 +57,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getMessage, getPayload, isSuccess, playerApi, type PlayerProfile } from '@/api'
-import { getStoredPlayerId } from '@/utils/session'
+import { useRouter } from 'vue-router'
+import type { PlayerProfile } from '@/api'
+import { loadStoredPlayerProfile } from '@/utils/current-player'
 
+const router = useRouter()
 const player = ref<PlayerProfile | null>(null)
 const loading = ref(false)
 
@@ -69,25 +71,25 @@ const playerInitial = computed(() => {
 })
 
 async function refresh() {
-  const playerId = getStoredPlayerId()
-  if (!playerId) {
-    player.value = null
-    return
-  }
-
   loading.value = true
   try {
-    const response = await playerApi.getInfo(playerId)
-    if (!isSuccess(response)) {
+    const result = await loadStoredPlayerProfile()
+    if (result.invalidSession) {
       player.value = null
-      ElMessage.error(getMessage(response, 'Failed to load player profile'))
+      ElMessage.warning('Stored explorer session is no longer valid. Please sign in again.')
+      await router.replace('/welcome/login')
       return
     }
 
-    player.value = getPayload(response)
-  } catch {
-    player.value = null
-    ElMessage.error('Failed to load player profile')
+    if (!result.profile) {
+      if (result.message) {
+        ElMessage.error(result.message)
+      }
+      player.value = null
+      return
+    }
+
+    player.value = result.profile
   } finally {
     loading.value = false
   }

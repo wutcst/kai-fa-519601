@@ -127,15 +127,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import type { UploadFile, UploadFiles } from 'element-plus'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getMessage, getPayload, isSuccess, playerApi } from '@/api'
 import { setStoredPlayerId } from '@/utils/session'
 
 type Mode = 'login' | 'register'
 
+const route = useRoute()
 const router = useRouter()
 const mode = ref<Mode>('login')
 const submitting = ref(false)
@@ -172,6 +173,10 @@ function setMode(nextMode: Mode) {
   if (mode.value === nextMode) return
   mode.value = nextMode
   resetRegisterFields()
+  void router.replace({
+    path: '/welcome/login',
+    query: nextMode === 'register' ? { mode: 'register' } : {},
+  })
 }
 
 function toggleMode() {
@@ -256,6 +261,18 @@ async function handleRegister() {
 onBeforeUnmount(() => {
   revokeAvatarPreview()
 })
+
+watch(
+  () => route.query.mode,
+  (queryMode) => {
+    const nextMode: Mode = queryMode === 'register' ? 'register' : 'login'
+    if (mode.value !== nextMode) {
+      mode.value = nextMode
+      resetRegisterFields()
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <style scoped>
