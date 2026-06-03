@@ -2,6 +2,7 @@
   <div class="game-container">
     <div class="game-header">
       <PlayerInfo />
+      <el-button type="primary" @click="openBackpack">背包 (B)</el-button>
     </div>
     <div class="game-scene">
       <div class="nav-arrows">
@@ -24,6 +25,7 @@
       </div>
     </div>
     <LeaderBoard />
+    <Backpack ref="backpackRef" />
   </div>
 </template>
 
@@ -32,8 +34,10 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { playerApi, roomApi, backpackApi } from '@/api'
 import PlayerInfo from '@/components/PlayerInfo.vue'
 import LeaderBoard from '@/components/LeaderBoard.vue'
+import Backpack from '@/components/Backpack.vue'
 
 const currentRoom = ref<any>({ roomName: '', itemList: [] })
+const backpackRef = ref<InstanceType<typeof Backpack> | null>(null)
 
 async function loadRoom() {
   const playerId = Number(localStorage.getItem('playerId'))
@@ -57,6 +61,10 @@ async function pickItem(itemId: number) {
   await loadRoom()
 }
 
+function openBackpack() {
+  backpackRef.value?.open()
+}
+
 function handleKeydown(e: KeyboardEvent) {
   const map: Record<string, string> = { w: 'up', s: 'down', a: 'left', d: 'right' }
   const dir = map[e.key.toLowerCase()]
@@ -68,6 +76,9 @@ function handleKeydown(e: KeyboardEvent) {
   if (e.key.toLowerCase() === 'h') {
     const playerId = Number(localStorage.getItem('playerId'))
     playerApi.home(playerId).then(loadRoom)
+  }
+  if (e.key.toLowerCase() === 'b') {
+    openBackpack()
   }
 }
 
