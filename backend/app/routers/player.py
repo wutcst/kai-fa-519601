@@ -3,7 +3,9 @@ from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.schemas.player import LoginRequest, PlayerInfoRequest
+from app.schemas.player import (
+    LoginRequest, PlayerInfoRequest, MoveRequest, TransRequest,
+)
 from app.services import player_service
 
 router = APIRouter()
@@ -33,3 +35,23 @@ async def get_info(req: PlayerInfoRequest, db: AsyncSession = Depends(get_db)):
 @router.get("/list")
 async def list_players(db: AsyncSession = Depends(get_db)):
     return await player_service.list_all_players(db)
+
+
+@router.post("/move")
+async def move(req: MoveRequest, db: AsyncSession = Depends(get_db)):
+    return await player_service.move_player(db, req.player_id, req.direction)
+
+
+@router.post("/trans")
+async def teleport(req: TransRequest, db: AsyncSession = Depends(get_db)):
+    return await player_service.teleport_player(db, req.player_id)
+
+
+@router.post("/back")
+async def back(req: TransRequest, db: AsyncSession = Depends(get_db)):
+    return await player_service.back_player(db, req.player_id)
+
+
+@router.post("/home")
+async def home(req: TransRequest, db: AsyncSession = Depends(get_db)):
+    return await player_service.home_player(db, req.player_id)
