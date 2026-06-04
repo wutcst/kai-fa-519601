@@ -97,6 +97,9 @@ async def pick_item(db: AsyncSession, player_id: int, item_id: int):
     return Result.success(None, "item picked successfully")
 
 async def throw_item(db: AsyncSession, player_id: int, item_id: int):
+    """
+    玩家将背包中的指定物品丢弃，物品将掉落至当前所在的房间内。
+    """
     # 1. 基础环境校验
     player = await db.get(Player, player_id)
     if not player:
