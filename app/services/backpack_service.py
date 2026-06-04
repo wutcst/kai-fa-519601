@@ -69,3 +69,13 @@ async def pick_item(db: AsyncSession, player_id: int, item_id: int):
     )).scalar_one_or_none()
     if not room_item:
         return Result.error(404, "item not found in current room")
+
+    # 4. 防重复校验：防止同一物品被重复放入同一个背包
+    existing = (await db.execute(
+        select(BackpackItem).where(
+            BackpackItem.backpack_id == player.player_backpack_id,
+            BackpackItem.item_id == item_id,
+        )
+    )).scalar_one_or_none()
+    if existing:
+        return Result.error(409, "item already in backpack")
