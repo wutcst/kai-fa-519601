@@ -50,3 +50,10 @@ app.include_router(room.router, prefix="/room", tags=["room"])
 
 # 3. 背包模块 (B8任务新增)：处理玩家物品管理、道具拾取、丢弃与消耗判定
 app.include_router(backpack.router, prefix="/backpack", tags=["backpack"])
+
+# 应用程序启动入口
+if __name__ == "__main__":
+    import uvicorn
+    # 使用 Uvicorn ASGI 服务器运行 FastAPI 应用
+    # host="0.0.0.0" 表示监听所有网络接口；reload=True 开启热更新，仅限开发环境使用
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8080, reload=True)
