@@ -47,3 +47,5 @@ async def get_backpack_by_player_id(db: AsyncSession, player_id: int):
         BackpackResponse(backpack_id=backpack.backpack_id, backpack_size=backpack.backpack_size, items=item_dtos),
         "success",
     )
+
+async def pick_item(db: AsyncSession, player_id: int, item_id: int):
