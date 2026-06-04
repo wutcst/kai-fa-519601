@@ -142,3 +142,15 @@ async def use_item(db: AsyncSession, player_id: int, item_id: int):
         return Result.error(404, "item not found")
 
     item_name = item.item_name
+
+    # 2. 销毁逻辑：不仅要解除背包关联，还要将该物品记录从 Item 物理表中彻底删除
+    result = await db.execute(
+        sa_delete(BackpackItem).where(
+            BackpackItem.backpack_id == player.player_backpack_id,
+            BackpackItem.item_id == item_id,
+        )
+    )
+    if result.rowcount == 0:
+        return Result.error(404, "item not found in backpack or already used")
+
+    await db.delete(item)
