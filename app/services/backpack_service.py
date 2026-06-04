@@ -79,3 +79,9 @@ async def pick_item(db: AsyncSession, player_id: int, item_id: int):
     )).scalar_one_or_none()
     if existing:
         return Result.error(409, "item already in backpack")
+
+    # 5. 状态流转：将物品绑定至背包，同时从房间的物品列表中彻底移除
+    db.add(BackpackItem(backpack_id=player.player_backpack_id, item_id=item_id))
+    await db.execute(
+        sa_delete(RoomItem).where(RoomItem.room_id == player.player_room_id, RoomItem.item_id == item_id)
+    )
