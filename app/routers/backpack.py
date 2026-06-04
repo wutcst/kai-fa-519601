@@ -16,6 +16,13 @@ async def get_backpack(req: BackpackListRequest, db: AsyncSession = Depends(get_
     return await backpack_service.get_backpack_by_player_id(db, req.player_id)
 
 @router.post("/pick", summary="拾取物品")
+"""
+    玩家从当前所在的房间中拾取指定物品到背包中。
+    拾取操作将消耗 2 点体力，并实时更新玩家分数。
+    
+    - **player_id**: 玩家 ID
+    - **item_id**: 欲拾取的物品 ID
+    """
 async def pick_item(req: BackpackItemActionRequest, db: AsyncSession = Depends(get_db)):
     return await backpack_service.pick_item(db, req.player_id, req.item_id)
 
