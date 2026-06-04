@@ -37,3 +37,6 @@ app.add_middleware(
 # 初始化并配置静态文件上传目录
 upload_path = Path(settings.upload_dir)
 upload_path.mkdir(parents=True, exist_ok=True)  # 若目录不存在则递归创建，防止启动报错
+
+# 将本地物理目录挂载到 /uploads 路由节点，供外部直接访问静态资源
+app.mount("/uploads", StaticFiles(directory=str(upload_path)), name="uploads")
