@@ -33,3 +33,5 @@ async def get_backpack_by_player_id(db: AsyncSession, player_id: int):
     item_ids = [r.item_id for r in relations]
     items = []
     if item_ids:
+        # 4. 批量查询：根据物品 ID 列表，从 Item 表中拉取具体的物品信息
+        items = (await db.execute(select(Item).where(Item.item_id.in_(item_ids)))).scalars().all()
