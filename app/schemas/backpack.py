@@ -15,3 +15,8 @@ class ItemDTO(BaseModel):
     item_name: str
     item_size: int
     item_value: int
+
+class BackpackResponse(BaseModel):
+    backpack_id: int
+    backpack_size: int
+    items: list[ItemDTO] = []
