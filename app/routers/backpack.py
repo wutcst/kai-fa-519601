@@ -8,6 +8,10 @@ from app.services import backpack_service
 router = APIRouter()
 
 @router.post("/list", summary="查看背包")
+"""
+    查询指定玩家的背包信息及背包内的所有物品详情。
+    - **player_id**: 发起查询的玩家 ID
+    """
 async def get_backpack(req: BackpackListRequest, db: AsyncSession = Depends(get_db)):
     return await backpack_service.get_backpack_by_player_id(db, req.player_id)
 
