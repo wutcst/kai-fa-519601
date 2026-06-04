@@ -10,6 +10,9 @@ from app.schemas.result import Result
 from app.services.player_service import update_score
 
 async def get_backpack_by_player_id(db: AsyncSession, player_id: int):
+"""
+    根据玩家 ID 查询其背包及其内含物品的详细信息。
+    """
     # 1. 校验玩家实体及其是否绑定了背包
     player = await db.get(Player, player_id)
     if not player:
