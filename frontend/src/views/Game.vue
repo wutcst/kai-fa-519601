@@ -15,6 +15,7 @@
       </div>
       <div class="room-info">
         <h3>{{ currentRoom.roomName }}</h3>
+        <p class="room-desc">{{ getRoomDescription(currentRoom.roomName) }}</p>
         <p>房间物品：</p>
         <ul>
           <li v-for="item in currentRoom.itemList" :key="item.itemId">
@@ -63,6 +64,36 @@ const iconMap: Record<string, string> = {
 
 function getItemIcon(name: string): string {
   return iconMap[name] || '🎒'
+}
+
+const roomDescriptions: Record<string, string> = {
+  主城: '🏰 冒险者聚集的中心城镇，温暖的阳光洒在石板路上，这里是所有旅程的起点。',
+  森林: '🌲 茂密的原始森林，阳光透过层层树叶洒下斑驳的光影，空气中弥漫着泥土和松脂的清香。',
+  沙漠: '🏜️ 一望无际的金色沙海，热浪翻滚，远处隐约可见古老的遗迹。',
+  沼泽: '🕸️ 阴暗潮湿的沼泽地，泥泞中冒着气泡，四周弥漫着腐朽的气息。',
+  洞穴: '⛏️ 幽深的洞穴中回荡着水滴声，岩壁上闪烁着神秘的矿石光芒。',
+  雪山: '🏔️ 白雪皑皑的山峰，寒风凛冽，每一步都在松软的雪地上留下深深的足迹。',
+  城堡: '🏯 古老的石砌城堡，高耸的塔楼和厚重的城墙诉说着昔日的辉煌。',
+  地牢: '🔗 阴暗潮湿的地下牢房，铁链的碰撞声在空旷的走廊中回响。',
+  村庄: '🏘️ 宁静的小村庄，炊烟袅袅，友善的村民在田间劳作。',
+  废墟: '💀 被遗忘的古老废墟，断壁残垣间爬满了藤蔓，隐藏着不为人知的秘密。',
+  海滩: '🏖️ 金色的沙滩与碧蓝的海水相接，海浪轻轻拍打着岸边，海风带来咸咸的味道。',
+  火山: '🌋 炽热的火山口喷吐着浓烟，岩浆在裂缝中缓缓流淌，大地在脚下微微颤抖。',
+  花园: '🌸 繁花似锦的魔法花园，五彩斑斓的花朵散发着迷人的芬芳，蝴蝶在花丛中翩翩起舞。',
+  塔楼: '🗼 高耸入云的魔法塔，螺旋楼梯蜿蜒而上，塔顶可以俯瞰整片大陆。',
+  墓地: '🪦 寂静的古老墓地，墓碑上刻满了岁月的痕迹，夜风中似乎能听到低语。',
+  市场: '🛒 热闹的集市，商贩们的叫卖声此起彼伏，各种奇珍异宝琳琅满目。',
+  图书馆: '📚 宏伟的古老图书馆，高耸的书架上摆满了泛黄的古籍，空气中弥漫着纸张和墨水的气息。',
+  实验室: '⚗️ 炼金术士的秘密实验室，桌上摆满了五颜六色的药剂和奇形怪状的仪器。',
+  神庙: '⛪ 庄严的神庙矗立在山巅，彩色的玻璃窗透出神圣的光芒，虔诚的祈祷声在殿堂中回荡。',
+  港口: '⚓ 繁忙的港口码头，船只来来往往，海鸥在桅杆间盘旋鸣叫。',
+}
+
+function getRoomDescription(name: string): string {
+  for (const [key, desc] of Object.entries(roomDescriptions)) {
+    if (name.includes(key)) return desc
+  }
+  return '🔍 一个充满未知的房间，等待着你去探索其中的秘密。'
 }
 
 async function loadRoom() {
@@ -200,6 +231,14 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
 
 .room-info {
   max-width: 400px;
+}
+
+.room-desc {
+  font-size: 13px;
+  color: #aaa;
+  line-height: 1.6;
+  margin: 8px 0 16px;
+  font-style: italic;
 }
 
 .room-info ul {
