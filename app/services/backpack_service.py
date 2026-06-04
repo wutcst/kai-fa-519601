@@ -35,3 +35,10 @@ async def get_backpack_by_player_id(db: AsyncSession, player_id: int):
     if item_ids:
         # 4. 批量查询：根据物品 ID 列表，从 Item 表中拉取具体的物品信息
         items = (await db.execute(select(Item).where(Item.item_id.in_(item_ids)))).scalars().all()
+    
+    # 5. DTO 转换：将数据库实体映射为前端所需的数据传输对象
+    item_dtos = [
+        ItemDTO(item_id=i.item_id, item_name=i.item_name, item_size=i.item_size, item_value=i.item_value)
+        for i in items
+    ]
+    
