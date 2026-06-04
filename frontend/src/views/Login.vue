@@ -1,287 +1,196 @@
 <template>
-  <div class="login-page">
-    <!-- ========== Start Screen ========== -->
-    <transition name="screen-fade" mode="out-in">
-      <div
-        v-if="showStartScreen"
-        key="start"
-        class="start-screen"
-        @click="enterWelcome"
-      >
-        <div class="start-content">
-          <div class="start-text">
-            <h1 class="start-title">Zuulventurers</h1>
-            <p class="start-prompt">点击屏幕开始</p>
-            <div class="click-indicator">
-              <div class="ripple"></div>
-              <div class="ripple"></div>
-              <div class="ripple"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </transition>
+  <div class="auth-card">
+    <aside class="auth-aside">
+      <p class="section-label">{{ mode === 'login' ? 'Explorer Sign In' : 'New Explorer' }}</p>
+      <h2>{{ mode === 'login' ? 'Resume Your Run' : 'Create Your Access Card' }}</h2>
+      <p class="aside-copy">
+        {{
+          mode === 'login'
+            ? 'Use an existing explorer profile to reach the character entry screen and continue into the current game shell.'
+            : 'Create a new explorer with username, password, and an optional avatar upload supported by the backend.'
+        }}
+      </p>
 
-    <!-- ========== Welcome Screen ========== -->
-    <transition name="screen-fade" mode="out-in">
-      <div v-if="showWelcome" key="welcome" class="welcome-screen">
-        <div class="welcome-content">
-          <h1 class="game-title">Zuulventurers</h1>
-          <p class="game-subtitle">开启你的史诗冒险之旅</p>
-
-          <div class="welcome-buttons">
-            <button
-              class="welcome-btn start-btn"
-              @click="startAuth"
-              @mouseenter="addGlowEffect"
-              @mouseleave="removeGlowEffect"
-            >
-              <span>登录 / 注册</span>
-            </button>
-
-            <button
-              class="welcome-btn intro-btn"
-              @click="showGameIntro"
-              @mouseenter="addGlowEffect"
-              @mouseleave="removeGlowEffect"
-            >
-              <span>游戏介绍</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </transition>
-
-    <!-- ========== Auth Card ========== -->
-    <transition name="screen-fade" mode="out-in">
-      <div
-        v-if="showAuth"
-        key="auth"
-        class="auth-container"
-        :class="{ 'register-mode': isRegisterMode }"
-      >
-        <!-- 关闭按钮 -->
-        <button
-          class="close-button"
-          :disabled="loading"
-          title="返回主页"
-          @click="backToWelcome"
-        >
-          ×
+      <div class="mode-pills">
+        <button class="mode-pill" :class="{ active: mode === 'login' }" type="button" @click="setMode('login')">
+          登录
         </button>
-
-        <!-- 左侧视觉面板 -->
-        <div v-show="!isMobile" class="auth-image">
-          <!-- 登录模式：显示背景图 -->
-          <template v-if="!isRegisterMode">
-            <img
-              src="/images/login-bg.png"
-              class="login-bg"
-              alt="login splash"
-            />
-          </template>
-          <!-- 注册模式：显示头像上传 -->
-          <template v-else>
-            <div class="avatar-upload">
-              <transition name="avatar-fade" mode="out-in">
-                <template v-if="avatarPreview">
-                  <div
-                    key="preview"
-                    class="avatar-placeholder"
-                    @click="triggerFileInput"
-                  >
-                    <img
-                      :src="avatarPreview"
-                      alt="头像预览"
-                      class="avatar-preview"
-                    />
-                    <span>点击更换头像</span>
-                  </div>
-                </template>
-                <template v-else>
-                  <div
-                    key="placeholder"
-                    class="avatar-placeholder"
-                    @click="triggerFileInput"
-                  >
-                    <div class="plus">+</div>
-                    <span>上传头像</span>
-                  </div>
-                </template>
-              </transition>
-              <input
-                ref="avatarInputRef"
-                type="file"
-                accept="image/*"
-                style="display: none"
-                @change="onAvatarChange"
-              />
-            </div>
-          </template>
-        </div>
-
-        <!-- 右侧表单面板 -->
-        <transition name="fade-slide" mode="out-in">
-          <!-- ===== 登录表单 ===== -->
-          <div v-if="!isRegisterMode" key="login" class="auth-form">
-            <h2 class="form-title">登录游戏</h2>
-
-            <form @submit.prevent="handleLogin">
-              <div class="form-group">
-                <label for="login-username">用户名</label>
-                <input
-                  id="login-username"
-                  v-model.trim="loginData.username"
-                  type="text"
-                  placeholder="请输入用户名"
-                  required
-                />
-              </div>
-
-              <div class="form-group">
-                <label for="login-password">密码</label>
-                <input
-                  id="login-password"
-                  v-model="loginData.password"
-                  type="password"
-                  placeholder="请输入密码"
-                  required
-                />
-              </div>
-
-              <div class="checkbox-group">
-                <input
-                  id="remember"
-                  v-model="loginData.rememberMe"
-                  type="checkbox"
-                />
-                <label for="remember">记住我</label>
-                <a class="forgot-password" href="#">忘记密码?</a>
-              </div>
-
-              <button
-                class="submit-button"
-                type="submit"
-                :disabled="loading"
-              >
-                {{ loading ? '登录中…' : '开始冒险吧！' }}
-              </button>
-            </form>
-
-            <button
-              class="switch-button"
-              :disabled="loading"
-              @click="toggleMode"
-            >
-              注册新账号
-            </button>
-          </div>
-
-          <!-- ===== 注册表单 ===== -->
-          <div v-else key="register" class="auth-form">
-            <h2 class="form-title">创建新账号</h2>
-
-            <!-- 移动端头像上传 -->
-            <div v-if="isMobile" class="avatar-upload avatar-upload-mobile">
-              <transition name="avatar-fade" mode="out-in">
-                <template v-if="avatarPreview">
-                  <div
-                    key="preview"
-                    class="avatar-placeholder"
-                    @click="triggerFileInput"
-                  >
-                    <img
-                      :src="avatarPreview"
-                      alt="头像预览"
-                      class="avatar-preview"
-                    />
-                    <span>点击更换头像</span>
-                  </div>
-                </template>
-                <template v-else>
-                  <div
-                    key="placeholder"
-                    class="avatar-placeholder"
-                    @click="triggerFileInput"
-                  >
-                    <div class="plus">+</div>
-                    <span>上传头像</span>
-                  </div>
-                </template>
-              </transition>
-              <input
-                ref="avatarInputRef"
-                type="file"
-                accept="image/*"
-                style="display: none"
-                @change="onAvatarChange"
-              />
-            </div>
-
-            <form @submit.prevent="handleRegister">
-              <div class="form-group">
-                <label for="reg-username">用户名</label>
-                <input
-                  id="reg-username"
-                  v-model.trim="registerData.username"
-                  type="text"
-                  placeholder="请输入用户名"
-                  required
-                />
-              </div>
-
-              <div class="form-group">
-                <label for="reg-password">密码</label>
-                <input
-                  id="reg-password"
-                  v-model="registerData.password"
-                  type="password"
-                  placeholder="请输入密码"
-                  required
-                />
-              </div>
-
-              <div class="form-group">
-                <label for="reg-confirm">确认密码</label>
-                <input
-                  id="reg-confirm"
-                  v-model="registerData.confirm"
-                  type="password"
-                  placeholder="请再次输入密码"
-                  required
-                />
-              </div>
-
-              <button
-                class="submit-button"
-                type="submit"
-                :disabled="loading"
-              >
-                {{ loading ? '注册中…' : '立即注册' }}
-              </button>
-            </form>
-
-            <button
-              class="switch-button"
-              :disabled="loading"
-              @click="toggleMode"
-            >
-              返回登录
-            </button>
-          </div>
-        </transition>
+        <button
+          class="mode-pill"
+          :class="{ active: mode === 'register' }"
+          type="button"
+          @click="setMode('register')"
+        >
+          注册
+        </button>
       </div>
-    </transition>
+
+      <div class="aside-panel">
+        <template v-if="mode === 'login'">
+          <div class="panel-kicker">Current Access</div>
+          <strong>Player endpoints are live</strong>
+          <p>Login, register, profile lookup, and leaderboard are available now. Room and inventory actions remain disabled until the backend adds those routes.</p>
+        </template>
+        <template v-else>
+          <div class="avatar-preview-shell">
+            <div class="avatar-orb">
+              <img v-if="avatarPreviewUrl" :src="avatarPreviewUrl" alt="avatar preview" />
+              <span v-else>{{ previewInitial }}</span>
+            </div>
+            <div class="avatar-copy">
+              <strong>{{ form.avatarName || 'No avatar selected' }}</strong>
+              <p>{{ form.avatarName ? 'The image will be uploaded with the registration form.' : 'Avatar is optional. You can register without uploading a file.' }}</p>
+            </div>
+          </div>
+        </template>
+      </div>
+    </aside>
+
+    <section class="auth-main">
+      <div class="main-head">
+        <div>
+          <p class="main-kicker">{{ mode === 'login' ? 'Account Access' : 'Explorer Setup' }}</p>
+          <h3>{{ mode === 'login' ? 'Enter your account credentials' : 'Fill in the new explorer profile' }}</h3>
+        </div>
+        <button class="ghost-switch" type="button" @click="toggleMode">
+          {{ mode === 'login' ? 'Switch To Register' : 'Switch To Login' }}
+        </button>
+      </div>
+
+      <el-form :model="form" label-width="0" class="auth-form" @submit.prevent>
+        <el-form-item>
+          <div class="field-stack">
+            <label>Username</label>
+            <el-input v-model="form.username" placeholder="Enter username" size="large" />
+          </div>
+        </el-form-item>
+
+        <el-form-item>
+          <div class="field-stack">
+            <label>Password</label>
+            <el-input v-model="form.password" type="password" placeholder="Enter password" size="large" show-password />
+          </div>
+        </el-form-item>
+
+        <el-form-item v-if="mode === 'register'">
+          <div class="field-stack">
+            <label>Confirm Password</label>
+            <el-input
+              v-model="form.confirmPassword"
+              type="password"
+              placeholder="Enter password again"
+              size="large"
+              show-password
+            />
+          </div>
+        </el-form-item>
+
+        <el-form-item v-if="mode === 'register'">
+          <div class="field-stack">
+            <label>Avatar File</label>
+            <el-upload
+              class="avatar-uploader"
+              :auto-upload="false"
+              :show-file-list="false"
+              accept="image/*"
+              :on-change="handleAvatarChange"
+            >
+              <div class="upload-box">
+                <div class="upload-icon">{{ form.avatarName ? 'OK' : '+' }}</div>
+                <div class="upload-meta">
+                  <span class="upload-title">{{ form.avatarName ? 'Avatar selected' : 'Choose avatar file' }}</span>
+                  <span class="upload-file">
+                    {{ form.avatarName || 'Common image formats are supported. You can leave this empty.' }}
+                  </span>
+                </div>
+              </div>
+            </el-upload>
+          </div>
+        </el-form-item>
+
+        <div class="action-group">
+          <el-button
+            type="primary"
+            class="submit-btn"
+            :loading="submitting"
+            @click="mode === 'login' ? handleLogin() : handleRegister()"
+          >
+            {{ mode === 'login' ? 'Login And Continue' : 'Create Account' }}
+          </el-button>
+          <p class="action-note">
+            {{ mode === 'login' ? 'A successful login takes you to the character entry screen.' : 'A successful registration switches you back to login mode.' }}
+          </p>
+        </div>
+      </el-form>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import type { UploadFile, UploadFiles } from 'element-plus'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { playerApi } from '@/api'
+import { getMessage, getPayload, isSuccess, playerApi } from '@/api'
+import { setStoredPlayerId } from '@/utils/session'
 
+type Mode = 'login' | 'register'
+
+const route = useRoute()
 const router = useRouter()
+const mode = ref<Mode>('login')
+const submitting = ref(false)
+const avatarPreviewUrl = ref('')
+
+const form = reactive({
+  username: '',
+  password: '',
+  confirmPassword: '',
+  avatarFile: null as File | null,
+  avatarName: '',
+})
+
+const previewInitial = computed(() => {
+  const source = form.username.trim() || 'Z'
+  return source.charAt(0).toUpperCase()
+})
+
+function revokeAvatarPreview() {
+  if (avatarPreviewUrl.value) {
+    URL.revokeObjectURL(avatarPreviewUrl.value)
+    avatarPreviewUrl.value = ''
+  }
+}
+
+function resetRegisterFields() {
+  form.confirmPassword = ''
+  form.avatarFile = null
+  form.avatarName = ''
+  revokeAvatarPreview()
+}
+
+function setMode(nextMode: Mode) {
+  if (mode.value === nextMode) return
+  mode.value = nextMode
+  resetRegisterFields()
+  void router.replace({
+    path: '/welcome/login',
+    query: nextMode === 'register' ? { mode: 'register' } : {},
+  })
+}
+
+function toggleMode() {
+  setMode(mode.value === 'login' ? 'register' : 'login')
+}
+
+function handleAvatarChange(file: UploadFile, _files: UploadFiles) {
+  form.avatarFile = file.raw ?? null
+  form.avatarName = file.name
+  revokeAvatarPreview()
+  if (file.raw) {
+    avatarPreviewUrl.value = URL.createObjectURL(file.raw)
+  }
+}
 
 // ==================== 屏幕状态 ====================
 const showStartScreen = ref(true)
@@ -393,558 +302,351 @@ function onAvatarChange(e: Event) {
 
 // ==================== 登录 ====================
 async function handleLogin() {
-  if (!loginData.username || !loginData.password) {
-    ElMessage.warning('请完整填写表单')
+  if (!form.username.trim() || !form.password) {
+    ElMessage.warning('Please enter a username and password')
     return
   }
 
-  loading.value = true
+  submitting.value = true
   try {
-    const res = await playerApi.login({
-      username: loginData.username,
-      password: loginData.password,
+    const response = await playerApi.login({
+      username: form.username.trim(),
+      password: form.password,
     })
 
-    if (res.data.code === 200) {
-      const playerId = res.data.data.playerId
-      localStorage.setItem('playerId', String(playerId))
-      localStorage.setItem('roomId', '1')
-      ElMessage.success('登录成功！')
-      router.push('/welcome/archive')
-    } else {
-      ElMessage.error(res.data.message || '登录失败')
+    if (!isSuccess(response)) {
+      ElMessage.error(getMessage(response, 'Login failed'))
+      return
     }
-  } catch (err: any) {
-    if (err.message?.includes('CORS')) {
-      ElMessage.error('跨域请求被阻止，请检查后端 CORS 配置')
-    } else if (err.response?.status === 401) {
-      ElMessage.error('用户名或密码错误')
-    } else if (!err.response) {
-      ElMessage.error('无法连接到服务器，请检查网络连接')
-    } else {
-      ElMessage.error(err.response?.data?.msg || '服务器错误，请稍后重试')
-    }
+
+    const payload = getPayload(response)
+    setStoredPlayerId(payload.player_id)
+    ElMessage.success('Login successful')
+    await router.push('/welcome/archive')
+  } catch {
+    ElMessage.error('Login failed, please try again later')
   } finally {
-    loading.value = false
+    submitting.value = false
   }
 }
 
 // ==================== 注册 ====================
 async function handleRegister() {
-  if (!registerData.username || !registerData.password) {
-    ElMessage.warning('请完整填写表单')
-    return
-  }
-  if (registerData.password !== registerData.confirm) {
-    ElMessage.warning('两次输入的密码不一致')
-    return
-  }
-  if (!avatarFile.value) {
-    ElMessage.warning('请上传头像')
+  if (!form.username.trim() || !form.password) {
+    ElMessage.warning('Please enter a username and password')
     return
   }
 
-  loading.value = true
+  if (form.password !== form.confirmPassword) {
+    ElMessage.warning('The two passwords do not match')
+    return
+  }
+
+  const formData = new FormData()
+  formData.append('playerName', form.username.trim())
+  formData.append('password', form.password)
+  if (form.avatarFile) {
+    formData.append('avatar', form.avatarFile)
+  }
+
+  submitting.value = true
   try {
-    const fd = new FormData()
-    fd.append('playerName', registerData.username)
-    fd.append('password', registerData.password)
-    fd.append('avatar', avatarFile.value)
-
-    await playerApi.register(fd)
-
-    ElMessage.success('注册成功！请登录')
-    registerData.username = ''
-    registerData.password = ''
-    registerData.confirm = ''
-    resetAvatarState()
-    toggleMode()
-  } catch (err: any) {
-    if (err.response?.status === 409) {
-      ElMessage.error('用户名已存在，请更换其他用户名')
-    } else {
-      ElMessage.error(err.response?.data?.msg || '注册失败，请重试')
+    const response = await playerApi.register(formData)
+    if (!isSuccess(response)) {
+      ElMessage.error(getMessage(response, 'Registration failed'))
+      return
     }
+
+    ElMessage.success('Registration successful, please sign in with the new account')
+    form.password = ''
+    resetRegisterFields()
+    setMode('login')
+  } catch {
+    ElMessage.error('Registration failed, please try again later')
   } finally {
-    loading.value = false
+    submitting.value = false
   }
 }
+
+onBeforeUnmount(() => {
+  revokeAvatarPreview()
+})
+
+watch(
+  () => route.query.mode,
+  (queryMode) => {
+    const nextMode: Mode = queryMode === 'register' ? 'register' : 'login'
+    if (mode.value !== nextMode) {
+      mode.value = nextMode
+      resetRegisterFields()
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <style scoped>
-/* ==================== Start Screen ==================== */
-.start-screen {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 1000;
-  transition: all 0.3s ease;
+.auth-card {
+  width: min(100%, 920px);
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  border-radius: 30px;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(244, 240, 226, 0.96), rgba(230, 225, 209, 0.93));
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  color: #1d2432;
 }
 
-.start-screen:hover {
-  background: rgba(0, 0, 0, 0.4);
-}
-
-.start-content {
-  text-align: center;
-  color: white;
-  user-select: none;
-}
-
-.start-title {
-  font-size: 4rem;
-  font-weight: 700;
-  margin-bottom: 2rem;
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.5),
-    0 0 40px rgba(255, 255, 255, 0.3), 0 0 60px rgba(255, 255, 255, 0.2);
-  letter-spacing: 0.1em;
-  animation: titleGlow 3s ease-in-out infinite alternate;
-}
-
-.start-prompt {
-  font-size: 1.5rem;
-  font-weight: 300;
-  margin-bottom: 3rem;
-  opacity: 0.9;
-  animation: promptPulse 2s ease-in-out infinite;
-}
-
-.click-indicator {
-  position: relative;
-  width: 60px;
-  height: 60px;
-  margin: 0 auto;
-}
-
-.ripple {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 20px;
-  height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.6);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  animation: rippleEffect 2s infinite;
-}
-
-.ripple:nth-child(2) { animation-delay: 0.5s; }
-.ripple:nth-child(3) { animation-delay: 1s; }
-
-@keyframes titleGlow {
-  0% {
-    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5),
-      0 0 40px rgba(255, 255, 255, 0.3), 0 0 60px rgba(255, 255, 255, 0.2);
-  }
-  100% {
-    text-shadow: 0 0 30px rgba(255, 255, 255, 0.8),
-      0 0 60px rgba(255, 255, 255, 0.5), 0 0 90px rgba(255, 255, 255, 0.3);
-  }
-}
-
-@keyframes promptPulse {
-  0%, 100% { opacity: 0.7; transform: translateY(0); }
-  50%      { opacity: 1;   transform: translateY(-5px); }
-}
-
-@keyframes rippleEffect {
-  0%   { width: 20px; height: 20px; opacity: 1; }
-  100% { width: 60px; height: 60px; opacity: 0; }
-}
-
-/* ==================== Welcome Screen ==================== */
-.welcome-screen {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100vw;
-  height: 100vh;
-  z-index: 1;
-}
-
-.welcome-content {
-  text-align: center;
-  color: white;
-  padding: 40px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 20px;
-  width: 400px;
-}
-
-.game-title {
-  font-size: 3rem;
-  font-weight: bold;
-  margin-bottom: 15px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  background: linear-gradient(45deg, #fff, #e0e0e0);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.game-subtitle {
-  font-size: 1.3rem;
-  margin-bottom: 50px;
-  opacity: 0.9;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-}
-
-.welcome-buttons {
+.auth-aside {
+  padding: 32px 28px;
+  background:
+    radial-gradient(circle at top left, rgba(194, 255, 114, 0.2), transparent 36%),
+    linear-gradient(180deg, rgba(16, 23, 35, 0.96), rgba(22, 33, 50, 0.96));
+  color: #eef3df;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  align-items: center;
 }
 
-.welcome-btn {
-  padding: 18px 50px;
-  font-size: 1.2rem;
-  font-weight: 600;
-  border: 2px solid rgba(255, 255, 255, 0.8);
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border-radius: 15px;
-  cursor: pointer;
-  transition: all 0.4s ease;
-  backdrop-filter: blur(10px);
-  position: relative;
-  overflow: hidden;
-  min-width: 200px;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+.section-label {
+  margin: 0;
+  color: #c2ff72;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 
-.welcome-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
+.auth-aside h2 {
+  margin: 0;
+  font-size: 34px;
+  line-height: 0.98;
 }
 
-.welcome-btn:hover::before {
-  left: 100%;
+.aside-copy {
+  margin: 0;
+  color: #bfcad1;
+  line-height: 1.8;
 }
 
-.welcome-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-  border-color: rgba(255, 255, 255, 1);
-  background: rgba(255, 255, 255, 0.2);
+.mode-pills {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  padding: 6px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
 }
 
-.welcome-btn.glow-effect {
-  border-color: #4a90e2;
-  background: rgba(74, 144, 226, 0.3);
-  box-shadow: 0 0 20px rgba(74, 144, 226, 0.5), 0 10px 25px rgba(0, 0, 0, 0.3);
-  transform: translateY(-3px) scale(1.05);
-}
-
-.start-btn:hover {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3));
-}
-
-.intro-btn:hover {
-  background: linear-gradient(135deg, rgba(52, 152, 219, 0.3), rgba(155, 89, 182, 0.3));
-}
-
-/* ==================== Auth Container ==================== */
-.auth-container {
-  display: flex;
-  width: 900px;
-  height: 700px;
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  position: relative;
-  overflow: hidden;
-  backdrop-filter: blur(10px);
-  animation: slideIn 0.8s ease-out;
-}
-
-@keyframes slideIn {
-  from { opacity: 0; transform: translateY(50px) scale(0.9); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-/* ---- 关闭按钮 ---- */
-.close-button {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  width: 40px;
-  height: 40px;
-  font-size: 48px;
-  font-weight: 500;
-  color: #000;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  z-index: 10;
-  line-height: 1;
-  padding: 0;
+.mode-pill {
+  min-height: 42px;
   border: none;
-  background-color: transparent;
-}
-
-.close-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ---- 左侧面板 ---- */
-.auth-image {
-  flex: 0 0 50%;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  color: #000;
-  overflow: hidden;
-  z-index: 2;
-  box-sizing: border-box;
-}
-
-.login-bg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* ---- 头像上传 ---- */
-.avatar-upload {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-}
-
-.avatar-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  color: #6b7280;
-  transition: color 0.3s;
-}
-
-.avatar-placeholder:hover {
-  color: #4f46e5;
-}
-
-.avatar-placeholder .plus {
-  font-size: 48px;
-  font-weight: 300;
-  width: 120px;
-  height: 120px;
-  border: 2px dashed #d1d5db;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: border-color 0.3s;
-}
-
-.avatar-placeholder:hover .plus {
-  border-color: #4f46e5;
-}
-
-.avatar-preview {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid #4f46e5;
-}
-
-.avatar-upload-mobile {
-  margin-bottom: 20px;
-}
-
-.avatar-fade-enter-active,
-.avatar-fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-.avatar-fade-enter-from,
-.avatar-fade-leave-to {
-  opacity: 0;
-}
-
-/* ---- 右侧表单 ---- */
-.auth-form {
-  flex: 0 0 50%;
-  padding: 40px 36px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  box-sizing: border-box;
-}
-
-.form-title {
-  margin: 0 0 24px;
-  font-size: 24px;
-  font-weight: 700;
-  color: #1f2937;
-  text-align: center;
-}
-
-.form-group {
-  margin-bottom: 18px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #374151;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 12px 14px;
-  border: 1px solid #d1d5db;
-  border-radius: 10px;
-  font-size: 14px;
-  outline: none;
-  transition: border-color 0.3s, box-shadow 0.3s;
-  box-sizing: border-box;
-}
-
-.form-group input:focus {
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
-}
-
-.checkbox-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 20px;
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.checkbox-group input[type='checkbox'] {
-  width: auto;
-}
-
-.forgot-password {
-  margin-left: auto;
-  color: #4f46e5;
-  text-decoration: none;
-  font-size: 13px;
-}
-
-.forgot-password:hover {
-  text-decoration: underline;
-}
-
-.submit-button {
-  width: 100%;
-  padding: 14px;
-  border: none;
-  border-radius: 10px;
-  font-size: 16px;
-  font-weight: 600;
-  color: #fff;
-  background: linear-gradient(135deg, #4f46e5, #7c3aed);
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  margin-bottom: 14px;
-}
-
-.submit-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(79, 70, 229, 0.4);
-}
-
-.submit-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.switch-button {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151;
+  border-radius: 12px;
   background: transparent;
+  color: #dbe3d9;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
 }
 
-.switch-button:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.04);
+.mode-pill.active {
+  background: rgba(194, 255, 114, 0.2);
+  color: #f6faef;
+  box-shadow: inset 0 0 0 1px rgba(194, 255, 114, 0.2);
 }
 
-.switch-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.aside-panel {
+  margin-top: auto;
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* ==================== 过渡动画 ==================== */
-.screen-fade-enter-active,
-.screen-fade-leave-active {
-  transition: opacity 0.8s ease, transform 0.8s ease;
-}
-.screen-fade-enter-from,
-.screen-fade-leave-to {
-  opacity: 0;
-  transform: scale(0.9) translateY(50px);
+.panel-kicker {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #9fb39f;
 }
 
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-.fade-slide-enter-from {
-  opacity: 0;
-  transform: translateX(20px);
-}
-.fade-slide-leave-to {
-  opacity: 0;
-  transform: translateX(-20px);
+.aside-panel strong,
+.avatar-copy strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 18px;
 }
 
-/* ==================== 响应式 ==================== */
-@media (max-width: 768px) {
-  .start-title { font-size: 2.5rem; }
-  .start-prompt { font-size: 1.2rem; }
+.aside-panel p,
+.avatar-copy p {
+  margin: 10px 0 0;
+  color: #b9c5cb;
+  line-height: 1.7;
+  font-size: 14px;
+}
 
-  .auth-container {
-    width: 100%;
-    height: 100%;
+.avatar-preview-shell {
+  display: grid;
+  gap: 14px;
+}
+
+.avatar-orb {
+  width: 84px;
+  height: 84px;
+  border-radius: 22px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, rgba(194, 255, 114, 0.22), rgba(228, 137, 71, 0.22));
+  color: #f3f7eb;
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.avatar-orb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.auth-main {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.main-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.main-kicker {
+  margin: 0 0 10px;
+  color: #6f7a4d;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.main-head h3 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.ghost-switch {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(29, 36, 50, 0.12);
+  background: rgba(255, 255, 255, 0.7);
+  color: #39424d;
+  cursor: pointer;
+}
+
+.auth-form {
+  display: grid;
+  gap: 8px;
+}
+
+.field-stack {
+  width: 100%;
+  display: grid;
+  gap: 10px;
+}
+
+.field-stack label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4a5560;
+}
+
+.avatar-uploader {
+  width: 100%;
+}
+
+.upload-box {
+  width: 100%;
+  min-height: 82px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px dashed rgba(29, 36, 50, 0.18);
+  background: rgba(255, 255, 255, 0.56);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.upload-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, rgba(94, 109, 64, 0.9), rgba(143, 98, 56, 0.9));
+  color: #f8f3e4;
+  font-weight: 700;
+}
+
+.upload-meta {
+  display: grid;
+  gap: 6px;
+}
+
+.upload-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.upload-file {
+  color: #6b7177;
+  font-size: 13px;
+}
+
+.action-group {
+  margin-top: 8px;
+  display: grid;
+  gap: 12px;
+}
+
+.submit-btn {
+  min-height: 48px;
+  border-radius: 16px;
+  font-weight: 600;
+}
+
+.action-note {
+  color: #6d7379;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+@media (max-width: 860px) {
+  .auth-card {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-main {
+    padding: 26px;
+  }
+}
+
+@media (max-width: 640px) {
+  .auth-aside,
+  .auth-main {
+    padding: 22px;
+  }
+
+  .main-head {
     flex-direction: column;
   }
 
-  .auth-image {
-    display: none;
-  }
-
-  .auth-form {
-    flex: 1;
-    padding: 30px 24px;
+  .ghost-switch {
+    width: 100%;
   }
 }
 </style>
