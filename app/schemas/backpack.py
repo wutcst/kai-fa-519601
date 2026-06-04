@@ -19,6 +19,7 @@ class ItemDTO(BaseModel):
     item_value: int# 物品的基础价值或增益数值
 
 class BackpackResponse(BaseModel):
-    backpack_id: int
-    backpack_size: int
-    items: list[ItemDTO] = []
+    """背包状态完整响应体"""
+    backpack_id: int# 玩家绑定的背包唯一标识
+    backpack_size: int# 背包当前的最大容量上限
+    items: list[ItemDTO] = []# 背包内包含的物品列表，默认为空列表
