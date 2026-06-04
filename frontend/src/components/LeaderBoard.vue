@@ -1,57 +1,29 @@
 <template>
-  <aside class="leaderboard-card">
-    <div class="card-head">
-      <div>
-        <p class="eyebrow">Live Rankings</p>
-        <h3>Explorer Board</h3>
-      </div>
-      <button class="refresh-link" type="button" @click="refresh">Refresh</button>
-    </div>
-
-    <div v-if="loading" class="list-state">
-      <div v-for="item in 5" :key="item" class="skeleton-row"></div>
-    </div>
-
-    <ul v-else-if="players.length" class="rank-list">
-      <li v-for="(player, index) in players" :key="player.player_id" class="rank-row">
-        <span class="rank-chip">{{ index + 1 }}</span>
-        <div class="player-line">
-          <strong>{{ player.player_name }}</strong>
-          <span>Room #{{ player.player_room_id ?? '-' }}</span>
-        </div>
-        <span class="score-value">{{ player.player_score }}</span>
+  <div class="leaderboard">
+    <h4>排行榜</h4>
+    <ul>
+      <li v-for="(p, idx) in players" :key="p.playerId">
+        <span class="rank">{{ idx + 1 }}</span>
+        <span class="name">{{ p.playerName }}</span>
+        <span class="score">{{ p.playerScore }}</span>
       </li>
     </ul>
-
-    <div v-else class="empty-state">
-      <p>No ranking data available.</p>
-    </div>
-  </aside>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import { getMessage, getPayload, isSuccess, playerApi, type PlayerProfile } from '@/api'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { playerApi } from '@/api'
 
-const players = ref<PlayerProfile[]>([])
-const loading = ref(false)
-let timer: ReturnType<typeof setInterval> | null = null
+const players = ref<any[]>([])
+let timer: ReturnType<typeof setInterval>
 
 async function refresh() {
-  loading.value = true
-  try {
-    const response = await playerApi.getList()
-    if (!isSuccess(response)) {
-      ElMessage.error(getMessage(response, 'Failed to load leaderboard'))
-      return
-    }
-
-    players.value = [...getPayload(response)].sort((left, right) => right.player_score - left.player_score)
-  } catch {
-    ElMessage.error('Failed to load leaderboard')
-  } finally {
-    loading.value = false
+  const res = await playerApi.getList()
+  if (res.data.code === 200) {
+    players.value = (res.data.data || []).sort(
+      (a: any, b: any) => b.playerScore - a.playerScore,
+    )
   }
 }
 
@@ -59,96 +31,52 @@ onMounted(() => {
   refresh()
   timer = setInterval(refresh, 5000)
 })
-
-onUnmounted(() => {
-  if (timer) clearInterval(timer)
-})
+onUnmounted(() => clearInterval(timer))
 </script>
 
 <style scoped>
-.leaderboard-card {
-  padding: 22px;
-  border-radius: 26px;
-  background: linear-gradient(180deg, rgba(12, 18, 31, 0.94), rgba(18, 28, 46, 0.94));
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #eef2e9;
-}
-
-.card-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.eyebrow {
-  margin: 0 0 8px;
-  font-size: 12px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: #c2ff72;
-}
-
-.card-head h3 {
-  margin: 0;
-  font-size: 24px;
-}
-
-.refresh-link {
-  border: none;
-  background: transparent;
-  color: #c2ff72;
-  cursor: pointer;
-}
-
-.rank-list {
-  margin: 22px 0 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  gap: 10px;
-}
-
-.rank-row {
-  display: grid;
-  grid-template-columns: 36px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.rank-chip {
-  width: 36px;
-  height: 36px;
+.leaderboard {
+  position: fixed;
+  right: 16px;
+  top: 16px;
+  width: 200px;
+  padding: 14px 12px;
+  background: linear-gradient(135deg, rgba(30, 20, 60, 0.75), rgba(15, 10, 40, 0.8));
+  backdrop-filter: blur(12px);
   border-radius: 12px;
-  display: grid;
-  place-items: center;
-  background: rgba(194, 255, 114, 0.14);
-  color: #f4f8e8;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 0 20px rgba(120, 80, 255, 0.15),
+    0 0 40px rgba(120, 80, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+h4 {
+  margin: 0 0 10px;
+  text-align: center;
+  font-size: 15px;
   font-weight: 700;
+  letter-spacing: 2px;
+  background: linear-gradient(180deg, #ffd700 0%, #ff8c00 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+  filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.4));
 }
 
-.player-line {
-  min-width: 0;
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
-.player-line strong,
-.player-line span,
-.score-value {
-  display: block;
-}
-
-.player-line strong {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.player-line span {
-  margin-top: 4px;
-  color: #98a7b3;
+li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 6px;
   font-size: 13px;
   border-radius: 6px;
   transition: all 0.25s ease;
@@ -187,40 +115,55 @@ li:nth-child(3):hover {
   background: linear-gradient(90deg, rgba(205, 127, 50, 0.18), rgba(255, 255, 255, 0.04));
 }
 
-.score-value {
-  color: #f0cb84;
-  font-size: 20px;
+.rank {
+  width: 24px;
   font-weight: 700;
+  text-align: center;
 }
 
-.list-state {
-  margin-top: 22px;
-  display: grid;
-  gap: 10px;
+/* 前三名排名颜色 + 光晕 */
+li:nth-child(1) .rank {
+  color: #ffd700;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+}
+li:nth-child(2) .rank {
+  color: #c0c0c0;
+  text-shadow: 0 0 6px rgba(192, 192, 192, 0.5);
+}
+li:nth-child(3) .rank {
+  color: #cd7f32;
+  text-shadow: 0 0 6px rgba(205, 127, 50, 0.5);
+}
+li:nth-child(n+4) .rank {
+  color: rgba(255, 255, 255, 0.4);
 }
 
-.skeleton-row {
-  height: 62px;
-  border-radius: 18px;
-  background: linear-gradient(90deg, rgba(72, 87, 112, 0.7), rgba(123, 140, 160, 0.35), rgba(72, 87, 112, 0.7));
-  background-size: 200% 100%;
-  animation: shimmer 1.3s infinite linear;
+.name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 0 6px;
 }
 
-.empty-state {
-  margin-top: 22px;
-  min-height: 120px;
-  display: grid;
-  place-items: center;
-  color: #b9c5cb;
+.score {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(135deg, #00e5ff, #76ff03);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.3));
 }
 
-@keyframes shimmer {
+@keyframes fadeIn {
   from {
-    background-position: 200% 0;
+    opacity: 0;
+    transform: translateX(8px);
   }
   to {
-    background-position: -200% 0;
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 </style>
