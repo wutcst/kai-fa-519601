@@ -176,3 +176,5 @@ async def use_item(db: AsyncSession, player_id: int, item_id: int):
     await update_score(db, player_id)
 
     return Result.success(None, "item used and removed successfully")
+
+    
