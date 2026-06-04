@@ -24,6 +24,13 @@ async def get_backpack(req: BackpackListRequest, db: AsyncSession = Depends(get_
     - **item_id**: 欲拾取的物品 ID
     """
 async def pick_item(req: BackpackItemActionRequest, db: AsyncSession = Depends(get_db)):
+"""
+    玩家将背包中的指定物品丢弃到当前所在的房间中。
+    丢弃操作将消耗 2 点体力，并实时更新玩家分数。
+    
+    - **player_id**: 玩家 ID
+    - **item_id**: 欲丢弃的物品 ID
+    """
     return await backpack_service.pick_item(db, req.player_id, req.item_id)
 
 @router.post("/throw", summary="丢弃物品")
