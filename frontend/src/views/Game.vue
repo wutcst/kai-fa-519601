@@ -18,7 +18,7 @@
         <p>房间物品：</p>
         <ul>
           <li v-for="item in currentRoom.itemList" :key="item.itemId">
-            {{ item.itemName }} (重量:{{ item.itemSize }} 价值:{{ item.itemValue }})
+            {{ getItemIcon(item.itemName) }} {{ item.itemName }} (重量:{{ item.itemSize }} 价值:{{ item.itemValue }})
             <el-button size="small" @click="pickItem(item.itemId)">拾取</el-button>
           </li>
         </ul>
@@ -44,6 +44,24 @@ import Backpack from '@/components/Backpack.vue'
 const currentRoom = ref<any>({ roomName: '', itemList: [] })
 const backpackRef = ref<InstanceType<typeof Backpack> | null>(null)
 const actionMessage = ref('')
+
+const iconMap: Record<string, string> = {
+  火把: '🔥',
+  '古书（密码书）': '📖',
+  '炼金药水（小）': '🧪',
+  炼金试剂包: '🧬',
+  钥匙: '🔑',
+  '武器（短剑）': '🗡️',
+  盾牌: '🛡️',
+  '金币（堆）': '💰',
+  宝石: '💎',
+  魔法饼干: '🍪',
+  体力药水: '⚡'
+}
+
+function getItemIcon(name: string): string {
+  return iconMap[name] || '🎒'
+}
 
 async function loadRoom() {
   const playerId = Number(localStorage.getItem('playerId'))
