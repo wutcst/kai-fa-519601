@@ -115,3 +115,6 @@ async def throw_item(db: AsyncSession, player_id: int, item_id: int):
     )
     if result.rowcount == 0:
         return Result.error(404, "item not found in backpack")
+        
+    # 3. 逆向流转：将剥离出的物品重新绑定至玩家当前所在的房间
+    db.add(RoomItem(room_id=player.player_room_id, item_id=item_id))
