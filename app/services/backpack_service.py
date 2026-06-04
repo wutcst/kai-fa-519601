@@ -57,3 +57,8 @@ async def pick_item(db: AsyncSession, player_id: int, item_id: int):
         return Result.error(404, "player has no backpack")
     if not player.player_room_id:
         return Result.error(400, "player is not in a valid room")
+
+    # 2. 校验目标物品本身是否存在
+    item = await db.get(Item, item_id)
+    if not item:
+        return Result.error(404, "item not found")
