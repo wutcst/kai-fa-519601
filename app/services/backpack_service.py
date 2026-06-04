@@ -95,3 +95,6 @@ async def pick_item(db: AsyncSession, player_id: int, item_id: int):
     await update_score(db, player_id)
 
     return Result.success(None, "item picked successfully")
+
+async def throw_item(db: AsyncSession, player_id: int, item_id: int):
+    
