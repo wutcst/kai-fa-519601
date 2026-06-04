@@ -16,3 +16,8 @@ async def get_backpack_by_player_id(db: AsyncSession, player_id: int):
         return Result.error(404, "player not found")
     if not player.player_backpack_id:
         return Result.error(404, "player has no backpack")
+
+    # 2. 校验背包实体是否存在于数据库
+    backpack = await db.get(Backpack, player.player_backpack_id)
+    if not backpack:
+        return Result.error(404, "backpack not found")
