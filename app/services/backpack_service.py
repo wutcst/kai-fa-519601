@@ -41,4 +41,9 @@ async def get_backpack_by_player_id(db: AsyncSession, player_id: int):
         ItemDTO(item_id=i.item_id, item_name=i.item_name, item_size=i.item_size, item_value=i.item_value)
         for i in items
     ]
-    
+
+    # 6. 构造并返回最终的成功响应
+    return Result.success(
+        BackpackResponse(backpack_id=backpack.backpack_id, backpack_size=backpack.backpack_size, items=item_dtos),
+        "success",
+    )
