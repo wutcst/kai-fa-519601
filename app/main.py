@@ -47,3 +47,6 @@ app.include_router(player.router, prefix="/player", tags=["player"])
 
 # 2. 房间模块：处理房间基础信息及场景渲染交互
 app.include_router(room.router, prefix="/room", tags=["room"])
+
+# 3. 背包模块 (B8任务新增)：处理玩家物品管理、道具拾取、丢弃与消耗判定
+app.include_router(backpack.router, prefix="/backpack", tags=["backpack"])
