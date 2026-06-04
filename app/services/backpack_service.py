@@ -62,3 +62,10 @@ async def pick_item(db: AsyncSession, player_id: int, item_id: int):
     item = await db.get(Item, item_id)
     if not item:
         return Result.error(404, "item not found")
+
+    # 3. 场景校验：确认该物品确实存在于玩家当前所在的房间内
+    room_item = (await db.execute(
+        select(RoomItem).where(RoomItem.room_id == player.player_room_id, RoomItem.item_id == item_id)
+    )).scalar_one_or_none()
+    if not room_item:
+        return Result.error(404, "item not found in current room")
