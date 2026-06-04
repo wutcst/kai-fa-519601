@@ -1,6 +1,11 @@
-from app.routers import player, room  # 引入 player 和新开发的 room 路由
+from contextlib import asynccontextmanager
+from pathlib import Path
 
-app.include_router(room.router, prefix="/room", tags=["room"])
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
-# 房间路由模块挂载，用于支撑游戏内场景和物品的渲染数据交互
-app.include_router(room.router, prefix="/room", tags=["room"])
+from app.config import settings
+from app.database import init_db
+from app.routers import player, room, backpack
+from app.utils.init_data import init_game_data
