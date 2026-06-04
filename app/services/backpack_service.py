@@ -167,3 +167,9 @@ async def use_item(db: AsyncSession, player_id: int, item_id: int):
     else:
         # 默认机制：普通物品无增益，且白白消耗 2 点操作体力
         player.player_stamina -= 2
+
+    # 4. 结算阶段
+    await db.commit()
+    await update_score(db, player_id)
+
+    return Result.success(None, "item used and removed successfully")
