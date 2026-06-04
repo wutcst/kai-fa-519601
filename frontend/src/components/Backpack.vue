@@ -17,14 +17,14 @@
     <div v-if="items.length === 0" class="empty-tip">背包空空如也</div>
     <div v-else class="item-list">
       <div v-for="item in items" :key="item.itemId" class="item-row">
-        <span class="item-icon">{{ iconMap[item.itemName] || '🎒' }}</span>
+        <span class="item-icon">{{ ITEM_ICON_MAP[item.itemName] || '🎒' }}</span>
         <div class="item-info">
           <span class="item-name">{{ item.itemName }}</span>
           <span class="item-meta">重量: {{ item.itemSize }} | 价值: {{ item.itemValue }}</span>
         </div>
         <div class="item-actions">
           <el-button
-            v-if="isUsable(item.itemName)"
+            v-if="isUsableItem(item.itemName)"
             size="small"
             type="success"
             :disabled="loading"
@@ -50,27 +50,7 @@
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { backpackApi } from '@/api'
-
-// ==================== 图标映射 ====================
-const iconMap: Record<string, string> = {
-  火把: '🔥',
-  '古书（密码书）': '📖',
-  '炼金药水（小）': '🧪',
-  炼金试剂包: '🧬',
-  钥匙: '🔑',
-  '武器（短剑）': '🗡️',
-  盾牌: '🛡️',
-  '金币（堆）': '💰',
-  宝石: '💎',
-  魔法饼干: '🍪',
-  体力药水: '⚡',
-}
-
-// ==================== 可使用的物品 ====================
-const usableItems = ['魔法饼干', '体力药水']
-function isUsable(name: string): boolean {
-  return usableItems.includes(name)
-}
+import { ITEM_ICON_MAP, isUsableItem } from '@/constants'
 
 // ==================== 弹窗状态 ====================
 const visible = ref(false)
