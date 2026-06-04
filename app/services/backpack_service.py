@@ -85,3 +85,10 @@ async def pick_item(db: AsyncSession, player_id: int, item_id: int):
     await db.execute(
         sa_delete(RoomItem).where(RoomItem.room_id == player.player_room_id, RoomItem.item_id == item_id)
     )
+
+    # 6. 结算阶段：扣除交互动作所需的 2 点体力，提交事务并触发分数更新
+    player.player_stamina -= 2
+    await db.commit()
+    await update_score(db, player_id)
+
+    return Result.success(None, "item picked successfully")
