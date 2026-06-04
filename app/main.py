@@ -40,3 +40,7 @@ upload_path.mkdir(parents=True, exist_ok=True)  # 若目录不存在则递归创
 
 # 将本地物理目录挂载到 /uploads 路由节点，供外部直接访问静态资源
 app.mount("/uploads", StaticFiles(directory=str(upload_path)), name="uploads")
+
+# 注册全局路由树 (Routers)
+# 1. 玩家模块：处理玩家注册、登录鉴权及状态查询
+app.include_router(player.router, prefix="/player", tags=["player"])
