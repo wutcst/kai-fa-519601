@@ -23,3 +23,13 @@ async def lifespan(application: FastAPI):
 
 
 app = FastAPI(title="Zuulventurers Backend", lifespan=lifespan)
+
+# 挂载 CORS (跨域资源共享) 中间件
+# 允许前端应用 (如 Vue/React) 在不同域名或端口下安全地请求后端 API
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],     # 允许所有域名跨域（生产环境建议配置具体白名单）
+    allow_credentials=True,  # 允许携带 Cookie 等凭证信息
+    allow_methods=["*"],     # 允许所有 HTTP 方法 (GET, POST, PUT, DELETE 等)
+    allow_headers=["*"],     # 允许所有的请求头
+)
