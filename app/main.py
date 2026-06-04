@@ -57,3 +57,5 @@ if __name__ == "__main__":
     # 使用 Uvicorn ASGI 服务器运行 FastAPI 应用
     # host="0.0.0.0" 表示监听所有网络接口；reload=True 开启热更新，仅限开发环境使用
     uvicorn.run("app.main:app", host="0.0.0.0", port=8080, reload=True)
+
+    
