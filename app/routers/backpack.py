@@ -18,3 +18,7 @@ async def pick_item(req: BackpackItemActionRequest, db: AsyncSession = Depends(g
 @router.post("/throw", summary="丢弃物品")
 async def throw_item(req: BackpackItemActionRequest, db: AsyncSession = Depends(get_db)):
     return await backpack_service.throw_item(db, req.player_id, req.item_id)
+
+@router.post("/use", summary="使用物品")
+async def use_item(req: BackpackItemActionRequest, db: AsyncSession = Depends(get_db)):
+    return await backpack_service.use_item(db, req.player_id, req.item_id)
