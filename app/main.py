@@ -33,3 +33,7 @@ app.add_middleware(
     allow_methods=["*"],     # 允许所有 HTTP 方法 (GET, POST, PUT, DELETE 等)
     allow_headers=["*"],     # 允许所有的请求头
 )
+
+# 初始化并配置静态文件上传目录
+upload_path = Path(settings.upload_dir)
+upload_path.mkdir(parents=True, exist_ok=True)  # 若目录不存在则递归创建，防止启动报错
