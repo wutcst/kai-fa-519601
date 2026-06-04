@@ -49,6 +49,9 @@ async def get_backpack_by_player_id(db: AsyncSession, player_id: int):
     )
 
 async def pick_item(db: AsyncSession, player_id: int, item_id: int):
+    """
+    根据玩家 ID 查询其背包及其内含物品的详细信息。
+    """
     # 1. 校验玩家状态及是否处于合法房间内
     player = await db.get(Player, player_id)
     if not player:
