@@ -130,6 +130,9 @@ async def throw_item(db: AsyncSession, player_id: int, item_id: int):
     return Result.success(None, "item dropped to room successfully")
 
 async def use_item(db: AsyncSession, player_id: int, item_id: int):
+    """
+    玩家消耗使用背包中的物品，触发对应的特殊效果。物品使用后将被系统永久销毁。
+    """
     # 1. 前置校验与物品获取
     player = await db.get(Player, player_id)
     if not player:
