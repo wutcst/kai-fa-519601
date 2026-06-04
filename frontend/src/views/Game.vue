@@ -44,6 +44,8 @@ import Backpack from '@/components/Backpack.vue'
 const currentRoom = ref<any>({ roomName: '', itemList: [] })
 const backpackRef = ref<InstanceType<typeof Backpack> | null>(null)
 const actionMessage = ref('')
+const backpackSize = ref(0)
+const backpackCount = ref(0)
 
 const iconMap: Record<string, string> = {
   火把: '🔥',
@@ -73,6 +75,19 @@ async function loadRoom() {
   }
 }
 
+async function loadBackpack() {
+  const playerId = Number(localStorage.getItem('playerId'))
+  try {
+    const res = await backpackApi.getList(playerId)
+    if (res.data.code === 200) {
+      backpackSize.value = res.data.data.backpackSize || 0
+      backpackCount.value = (res.data.data.itemList || []).length
+    }
+  } catch {
+    // 静默失败
+  }
+}
+
 async function move(direction: string) {
   const playerId = Number(localStorage.getItem('playerId'))
   try {
@@ -91,9 +106,15 @@ async function move(direction: string) {
 
 async function pickItem(itemId: number) {
   const playerId = Number(localStorage.getItem('playerId'))
+  if (backpackCount.value >= backpackSize.value) {
+    actionMessage.value = '背包已满，无法拾取'
+    setTimeout(() => { actionMessage.value = '' }, 2000)
+    return
+  }
   try {
     await backpackApi.pickItem(playerId, itemId)
     await loadRoom()
+    await loadBackpack()
     actionMessage.value = '拾取成功'
   } catch {
     actionMessage.value = '拾取失败，请重试'
@@ -124,6 +145,7 @@ function handleKeydown(e: KeyboardEvent) {
 
 onMounted(() => {
   loadRoom()
+  loadBackpack()
   window.addEventListener('keydown', handleKeydown)
 })
 onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
