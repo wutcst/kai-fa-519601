@@ -10,3 +10,7 @@ router = APIRouter()
 @router.post("/list", summary="查看背包")
 async def get_backpack(req: BackpackListRequest, db: AsyncSession = Depends(get_db)):
     return await backpack_service.get_backpack_by_player_id(db, req.player_id)
+
+@router.post("/pick", summary="拾取物品")
+async def pick_item(req: BackpackItemActionRequest, db: AsyncSession = Depends(get_db)):
+    return await backpack_service.pick_item(db, req.player_id, req.item_id)
