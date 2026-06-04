@@ -118,3 +118,10 @@ async def throw_item(db: AsyncSession, player_id: int, item_id: int):
         
     # 3. 逆向流转：将剥离出的物品重新绑定至玩家当前所在的房间
     db.add(RoomItem(room_id=player.player_room_id, item_id=item_id))
+
+    # 4. 结算阶段：操作同样消耗体力
+    player.player_stamina -= 2
+    await db.commit()
+    await update_score(db, player_id)
+
+    return Result.success(None, "item dropped to room successfully")
