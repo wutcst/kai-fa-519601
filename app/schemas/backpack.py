@@ -4,7 +4,7 @@
 from pydantic import BaseModel
 
 class BackpackListRequest(BaseModel):
-    player_id: int
+    player_id: int# 发起查询的玩家 ID
 
 class BackpackItemActionRequest(BaseModel):
     player_id: int
