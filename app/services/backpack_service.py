@@ -128,3 +128,6 @@ async def throw_item(db: AsyncSession, player_id: int, item_id: int):
     await update_score(db, player_id)
 
     return Result.success(None, "item dropped to room successfully")
+
+async def use_item(db: AsyncSession, player_id: int, item_id: int):
+    
