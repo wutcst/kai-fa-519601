@@ -154,3 +154,16 @@ async def use_item(db: AsyncSession, player_id: int, item_id: int):
         return Result.error(404, "item not found in backpack or already used")
 
     await db.delete(item)
+
+    # 3. 特效策略分发：根据物品名称触发不同的增益或减益
+    if item_name == "魔法饼干":
+        # 特效 A：扩充背包容量上限
+        backpack = await db.get(Backpack, player.player_backpack_id)
+        if backpack:
+            backpack.backpack_size += 10
+    elif item_name == "体力药水":
+        # 特效 B：恢复玩家大量体力
+        player.player_stamina += 10
+    else:
+        # 默认机制：普通物品无增益，且白白消耗 2 点操作体力
+        player.player_stamina -= 2
