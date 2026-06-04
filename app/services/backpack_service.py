@@ -130,4 +130,15 @@ async def throw_item(db: AsyncSession, player_id: int, item_id: int):
     return Result.success(None, "item dropped to room successfully")
 
 async def use_item(db: AsyncSession, player_id: int, item_id: int):
-    
+    # 1. 前置校验与物品获取
+    player = await db.get(Player, player_id)
+    if not player:
+        return Result.error(404, "player not found")
+    if not player.player_backpack_id:
+        return Result.error(404, "player has no backpack")
+
+    item = await db.get(Item, item_id)
+    if not item:
+        return Result.error(404, "item not found")
+
+    item_name = item.item_name
