@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.database import init_db
-from app.routers import player, room
+from app.routers import player, room, backpack, game
 from app.utils.init_data import init_game_data
 
 
@@ -34,6 +34,8 @@ app.mount("/uploads", StaticFiles(directory=str(upload_path)), name="uploads")
 
 app.include_router(player.router, prefix="/player", tags=["player"])
 app.include_router(room.router, prefix="/room", tags=["room"])
+app.include_router(backpack.router, prefix="/backpack", tags=["backpack"])
+app.include_router(game.router, prefix="/game", tags=["game"])
 
 
 if __name__ == "__main__":
