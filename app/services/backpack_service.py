@@ -24,3 +24,12 @@ async def get_backpack_by_player_id(db: AsyncSession, player_id: int):
     backpack = await db.get(Backpack, player.player_backpack_id)
     if not backpack:
         return Result.error(404, "backpack not found")
+    
+    # 3. 关联查询：通过中间表 BackpackItem 获取该背包下所有的物品 ID
+    relations = (await db.execute(
+        select(BackpackItem).where(BackpackItem.backpack_id == backpack.backpack_id)
+    )).scalars().all()
+
+    item_ids = [r.item_id for r in relations]
+    items = []
+    if item_ids:
