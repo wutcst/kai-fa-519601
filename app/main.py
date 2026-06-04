@@ -44,3 +44,6 @@ app.mount("/uploads", StaticFiles(directory=str(upload_path)), name="uploads")
 # 注册全局路由树 (Routers)
 # 1. 玩家模块：处理玩家注册、登录鉴权及状态查询
 app.include_router(player.router, prefix="/player", tags=["player"])
+
+# 2. 房间模块：处理房间基础信息及场景渲染交互
+app.include_router(room.router, prefix="/room", tags=["room"])
