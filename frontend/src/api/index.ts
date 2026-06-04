@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-// 统一 axios 实例（后端所有接口均无 /api 前缀）
+// 统一 axios 实例
 const api = axios.create({
   baseURL: '',
   withCredentials: true,

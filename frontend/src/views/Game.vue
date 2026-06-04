@@ -26,6 +26,11 @@
     </div>
     <LeaderBoard />
     <Backpack ref="backpackRef" />
+
+    <!-- 操作消息提示 -->
+    <transition name="msg-fade">
+      <div v-if="actionMessage" class="action-message">{{ actionMessage }}</div>
+    </transition>
   </div>
 </template>
 
@@ -38,6 +43,7 @@ import Backpack from '@/components/Backpack.vue'
 
 const currentRoom = ref<any>({ roomName: '', itemList: [] })
 const backpackRef = ref<InstanceType<typeof Backpack> | null>(null)
+const actionMessage = ref('')
 
 async function loadRoom() {
   const playerId = Number(localStorage.getItem('playerId'))
@@ -51,14 +57,30 @@ async function loadRoom() {
 
 async function move(direction: string) {
   const playerId = Number(localStorage.getItem('playerId'))
-  const res = await playerApi.move(playerId, direction)
-  if (res.data.code === 200) await loadRoom()
+  try {
+    const res = await playerApi.move(playerId, direction)
+    if (res.data.code === 200) {
+      await loadRoom()
+      actionMessage.value = `成功移动到 ${currentRoom.value.roomName}`
+    } else {
+      actionMessage.value = '这个方向没有门'
+    }
+  } catch {
+    actionMessage.value = '这个方向没有门'
+  }
+  setTimeout(() => { actionMessage.value = '' }, 2000)
 }
 
 async function pickItem(itemId: number) {
   const playerId = Number(localStorage.getItem('playerId'))
-  await backpackApi.pickItem(playerId, itemId)
-  await loadRoom()
+  try {
+    await backpackApi.pickItem(playerId, itemId)
+    await loadRoom()
+    actionMessage.value = '拾取成功'
+  } catch {
+    actionMessage.value = '拾取失败，请重试'
+  }
+  setTimeout(() => { actionMessage.value = '' }, 2000)
 }
 
 function openBackpack() {
@@ -147,5 +169,28 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
 
 .room-info li {
   margin: 8px 0;
+}
+
+.action-message {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 24px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.msg-fade-enter-active,
+.msg-fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.msg-fade-enter-from,
+.msg-fade-leave-to {
+  opacity: 0;
 }
 </style>
