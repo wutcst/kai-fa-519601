@@ -2,10 +2,7 @@
   <div class="leaderboard">
     <h4>排行榜</h4>
     <ul>
-      <li
-        v-for="(p, idx) in players"
-        :key="p.playerId"
-      >
+      <li v-for="(p, idx) in players" :key="p.playerId">
         <span class="rank">{{ idx + 1 }}</span>
         <span class="name">{{ p.playerName }}</span>
         <span class="score">{{ p.playerScore }}</span>
@@ -24,9 +21,7 @@ let timer: ReturnType<typeof setInterval>
 async function refresh() {
   const res = await playerApi.getList()
   if (res.data.code === 200) {
-    players.value = (res.data.data || []).sort(
-      (a: any, b: any) => b.playerScore - a.playerScore,
-    )
+    players.value = (res.data.data || []).sort((a: any, b: any) => b.playerScore - a.playerScore)
   }
 }
 
@@ -90,11 +85,21 @@ li {
   animation: fadeIn 0.4s ease both;
 }
 
-li:nth-child(1) { animation-delay: 0.05s; }
-li:nth-child(2) { animation-delay: 0.1s; }
-li:nth-child(3) { animation-delay: 0.15s; }
-li:nth-child(4) { animation-delay: 0.2s; }
-li:nth-child(5) { animation-delay: 0.25s; }
+li:nth-child(1) {
+  animation-delay: 0.05s;
+}
+li:nth-child(2) {
+  animation-delay: 0.1s;
+}
+li:nth-child(3) {
+  animation-delay: 0.15s;
+}
+li:nth-child(4) {
+  animation-delay: 0.2s;
+}
+li:nth-child(5) {
+  animation-delay: 0.25s;
+}
 
 li:hover {
   background: rgba(255, 255, 255, 0.06);
@@ -141,7 +146,7 @@ li:nth-child(3) .rank {
   color: #cd7f32;
   text-shadow: 0 0 6px rgba(205, 127, 50, 0.5);
 }
-li:nth-child(n+4) .rank {
+li:nth-child(n + 4) .rank {
   color: rgba(255, 255, 255, 0.4);
 }
 

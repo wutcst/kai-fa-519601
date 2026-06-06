@@ -1,23 +1,14 @@
 <template>
-  <div
-    class="game-container"
-    :style="backgroundStyle"
-  >
+  <div class="game-container" :style="backgroundStyle">
     <div class="game-layout">
       <aside class="side-panel player-panel">
         <div class="player-shell">
           <div class="panel-heading">
             <span class="panel-kicker">Player</span>
-            <h2 class="panel-title">
-              冒险者状态
-            </h2>
+            <h2 class="panel-title">冒险者状态</h2>
           </div>
           <PlayerInfo class="player-card" />
-          <el-button
-            class="backpack-trigger"
-            type="primary"
-            @click="openBackpack"
-          >
+          <el-button class="backpack-trigger" type="primary" @click="openBackpack">
             背包 (B)
           </el-button>
         </div>
@@ -32,11 +23,7 @@
           <GameKeyHints />
           <div class="game-scene">
             <div class="nav-arrows">
-              <button
-                class="arrow up"
-                :disabled="!canMove('up') || isMoving"
-                @click="move('up')"
-              >
+              <button class="arrow up" :disabled="!canMove('up') || isMoving" @click="move('up')">
                 W
               </button>
               <div class="arrow-row">
@@ -69,10 +56,7 @@
                 {{ getRoomDescription(currentRoom.roomName) }}
               </p>
               <div class="scene-objects">
-                <div
-                  class="scene-object crate"
-                  @click="openCrate"
-                >
+                <div class="scene-object crate" @click="openCrate">
                   <span class="object-icon">📦</span>
                   <span class="object-label">木箱</span>
                 </div>
@@ -91,16 +75,10 @@
                   <span>房间物品</span>
                   <span class="room-item-count">{{ currentRoom.itemList.length }} 件</span>
                 </div>
-                <div
-                  v-if="currentRoom.itemList.length === 0"
-                  class="room-item-empty"
-                >
+                <div v-if="currentRoom.itemList.length === 0" class="room-item-empty">
                   当前房间暂无可拾取物品
                 </div>
-                <ul
-                  v-else
-                  class="room-item-list"
-                >
+                <ul v-else class="room-item-list">
                   <li
                     v-for="item in currentRoom.itemList"
                     :key="`room-item-${item.itemId}`"
@@ -136,20 +114,11 @@
     </div>
 
     <!-- 木箱弹窗 -->
-    <div
-      v-if="showCrate"
-      class="crate-overlay"
-      @click.self="showCrate = false"
-    >
+    <div v-if="showCrate" class="crate-overlay" @click.self="showCrate = false">
       <div class="crate-modal">
         <div class="crate-header">
           <h3>📦 木箱中的物品</h3>
-          <button
-            class="close-btn"
-            @click="showCrate = false"
-          >
-            ✕
-          </button>
+          <button class="close-btn" @click="showCrate = false">✕</button>
         </div>
         <div class="crate-items">
           <div
@@ -162,21 +131,15 @@
             <span class="object-icon">{{ getItemIcon(item.itemName) }}</span>
             <div class="crate-item-info">
               <span class="crate-item-name">{{ item.itemName }}</span>
-              <span class="crate-item-meta">重量: {{ item.itemSize }} | 价值: {{ item.itemValue }}</span>
+              <span class="crate-item-meta"
+                >重量: {{ item.itemSize }} | 价值: {{ item.itemValue }}</span
+              >
             </div>
           </div>
-          <div
-            v-if="currentRoom.itemList.length === 0"
-            class="crate-empty"
-          >
-            箱子里空空如也…
-          </div>
+          <div v-if="currentRoom.itemList.length === 0" class="crate-empty">箱子里空空如也…</div>
         </div>
         <div class="crate-footer">
-          <p
-            v-if="backpackCount >= backpackSize"
-            class="inventory-full-warning"
-          >
+          <p v-if="backpackCount >= backpackSize" class="inventory-full-warning">
             背包已满！请先清理背包空间。
           </p>
           <el-button
@@ -193,10 +156,7 @@
 
     <!-- 操作消息提示 -->
     <transition name="msg-fade">
-      <div
-        v-if="actionMessage"
-        class="action-message"
-      >
+      <div v-if="actionMessage" class="action-message">
         {{ actionMessage }}
       </div>
     </transition>
@@ -288,7 +248,7 @@ const iconMap: Record<string, string> = {
   '金币（堆）': '💰',
   宝石: '💎',
   魔法饼干: '🍪',
-  体力药水: '⚡'
+  体力药水: '⚡',
 }
 
 function getItemIcon(name: string): string {
@@ -391,7 +351,9 @@ async function loadBackpack() {
 async function move(direction: Direction) {
   if (!canMove(direction)) {
     actionMessage.value = '这个方向没有门'
-    setTimeout(() => { actionMessage.value = '' }, 2000)
+    setTimeout(() => {
+      actionMessage.value = ''
+    }, 2000)
     return
   }
 
@@ -411,7 +373,9 @@ async function move(direction: Direction) {
   } catch {
     actionMessage.value = '这个方向没有门'
   }
-  setTimeout(() => { actionMessage.value = '' }, 2000)
+  setTimeout(() => {
+    actionMessage.value = ''
+  }, 2000)
   isMoving.value = false
 }
 
@@ -432,7 +396,9 @@ async function back() {
   } catch {
     actionMessage.value = '已在最初房间，无法再后退'
   }
-  setTimeout(() => { actionMessage.value = '' }, 2000)
+  setTimeout(() => {
+    actionMessage.value = ''
+  }, 2000)
   isMoving.value = false
 }
 
@@ -451,7 +417,9 @@ async function goHome() {
   } catch {
     actionMessage.value = '回城失败，请重试'
   }
-  setTimeout(() => { actionMessage.value = '' }, 2000)
+  setTimeout(() => {
+    actionMessage.value = ''
+  }, 2000)
   isMoving.value = false
 }
 
@@ -496,7 +464,9 @@ async function doTeleport() {
   } catch {
     actionMessage.value = '传送失败，请稍后重试'
   }
-  setTimeout(() => { actionMessage.value = '' }, 2000)
+  setTimeout(() => {
+    actionMessage.value = ''
+  }, 2000)
   isMoving.value = false
 }
 
@@ -504,7 +474,9 @@ async function pickItem(itemId: number) {
   const playerId = Number(localStorage.getItem('playerId'))
   if (backpackCount.value >= backpackSize.value) {
     actionMessage.value = '背包已满，无法拾取'
-    setTimeout(() => { actionMessage.value = '' }, 2000)
+    setTimeout(() => {
+      actionMessage.value = ''
+    }, 2000)
     return
   }
   try {
@@ -515,7 +487,9 @@ async function pickItem(itemId: number) {
   } catch {
     actionMessage.value = '拾取失败，请重试'
   }
-  setTimeout(() => { actionMessage.value = '' }, 2000)
+  setTimeout(() => {
+    actionMessage.value = ''
+  }, 2000)
 }
 
 function openBackpack() {
@@ -529,7 +503,9 @@ function openCrate() {
 async function pickItemFromCrate(itemId: number) {
   if (backpackCount.value >= backpackSize.value) {
     actionMessage.value = '背包已满，无法拾取'
-    setTimeout(() => { actionMessage.value = '' }, 2000)
+    setTimeout(() => {
+      actionMessage.value = ''
+    }, 2000)
     return
   }
   const playerId = Number(localStorage.getItem('playerId'))
@@ -542,7 +518,9 @@ async function pickItemFromCrate(itemId: number) {
   } catch {
     actionMessage.value = '拾取失败，请重试'
   }
-  setTimeout(() => { actionMessage.value = '' }, 2000)
+  setTimeout(() => {
+    actionMessage.value = ''
+  }, 2000)
 }
 
 async function takeAllItems() {
@@ -562,7 +540,9 @@ async function takeAllItems() {
   await loadBackpack()
   actionMessage.value = `共拾取 ${picked} 件物品`
   if (currentRoom.value.itemList.length === 0) showCrate.value = false
-  setTimeout(() => { actionMessage.value = '' }, 2000)
+  setTimeout(() => {
+    actionMessage.value = ''
+  }, 2000)
 }
 
 function handleKeydown(e: KeyboardEvent) {
@@ -585,7 +565,9 @@ onMounted(() => {
   loadBackpack()
   window.addEventListener('keydown', handleKeydown)
   const mq = window.matchMedia('(max-width: 768px)')
-  const onMediaChange = (e: MediaQueryListEvent) => { isMobile.value = e.matches }
+  const onMediaChange = (e: MediaQueryListEvent) => {
+    isMobile.value = e.matches
+  }
   mq.addEventListener('change', onMediaChange)
   onUnmounted(() => mq.removeEventListener('change', onMediaChange))
 })

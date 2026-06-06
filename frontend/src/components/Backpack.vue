@@ -8,27 +8,13 @@
   >
     <!-- 背包容量信息 -->
     <div class="backpack-header">
-      <span class="capacity">
-        容量：{{ items.length }} / {{ backpackSize }}
-      </span>
+      <span class="capacity"> 容量：{{ items.length }} / {{ backpackSize }} </span>
     </div>
 
     <!-- 物品列表 -->
-    <div
-      v-if="items.length === 0"
-      class="empty-tip"
-    >
-      背包空空如也
-    </div>
-    <div
-      v-else
-      class="item-list"
-    >
-      <div
-        v-for="item in items"
-        :key="item.itemId"
-        class="item-row"
-      >
+    <div v-if="items.length === 0" class="empty-tip">背包空空如也</div>
+    <div v-else class="item-list">
+      <div v-for="item in items" :key="item.itemId" class="item-row">
         <span class="item-icon">{{ ITEM_ICON_MAP[item.itemName] || '🎒' }}</span>
         <div class="item-info">
           <span class="item-name">{{ item.itemName }}</span>
@@ -44,12 +30,7 @@
           >
             使用
           </el-button>
-          <el-button
-            size="small"
-            type="danger"
-            :disabled="loading"
-            @click="dropItem(item.itemId)"
-          >
+          <el-button size="small" type="danger" :disabled="loading" @click="dropItem(item.itemId)">
             丢弃
           </el-button>
         </div>

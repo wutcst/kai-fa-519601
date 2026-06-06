@@ -16,11 +16,7 @@
 
     <!-- 浮动形状 -->
     <div class="floating-shapes">
-      <div
-        v-for="n in 4"
-        :key="`shape-${n}`"
-        class="shape"
-      />
+      <div v-for="n in 4" :key="`shape-${n}`" class="shape" />
     </div>
 
     <!-- 子路由 -->
@@ -107,8 +103,12 @@ onBeforeUnmount(() => {
 }
 
 @keyframes zoomIn {
-  from { transform: scale(1); }
-  to   { transform: scale(1.04); }
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.04);
+  }
 }
 
 /* ---- 浮动形状 ---- */
@@ -127,14 +127,47 @@ onBeforeUnmount(() => {
   animation: float 20s infinite linear;
 }
 
-.shape:nth-child(1) { width: 80px;  height: 80px;  top: 20%; left: 10%; animation-delay: 0s; }
-.shape:nth-child(2) { width: 120px; height: 120px; top: 60%; left: 80%; animation-delay: -5s; }
-.shape:nth-child(3) { width: 60px;  height: 60px;  top: 80%; left: 20%; animation-delay: -10s; }
-.shape:nth-child(4) { width: 100px; height: 100px; top: 10%; left: 70%; animation-delay: -15s; }
+.shape:nth-child(1) {
+  width: 80px;
+  height: 80px;
+  top: 20%;
+  left: 10%;
+  animation-delay: 0s;
+}
+.shape:nth-child(2) {
+  width: 120px;
+  height: 120px;
+  top: 60%;
+  left: 80%;
+  animation-delay: -5s;
+}
+.shape:nth-child(3) {
+  width: 60px;
+  height: 60px;
+  top: 80%;
+  left: 20%;
+  animation-delay: -10s;
+}
+.shape:nth-child(4) {
+  width: 100px;
+  height: 100px;
+  top: 10%;
+  left: 70%;
+  animation-delay: -15s;
+}
 
 @keyframes float {
-  0%   { transform: translateY(0) rotate(0);    opacity: 1; }
-  50%  { transform: translateY(-100px) rotate(180deg); opacity: 0.5; }
-  100% { transform: translateY(0) rotate(360deg); opacity: 1; }
+  0% {
+    transform: translateY(0) rotate(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-100px) rotate(180deg);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(0) rotate(360deg);
+    opacity: 1;
+  }
 }
 </style>

@@ -2,35 +2,17 @@
   <div class="archive-page">
     <div class="archive-panel">
       <div class="panel-header">
-        <button
-          class="close-btn"
-          title="返回登录"
-          @click="backToLogin"
-        >
-          ×
-        </button>
+        <button class="close-btn" title="返回登录" @click="backToLogin">×</button>
         <h2 class="panel-title">
           <span class="title-icon">存</span>
           游戏存档
         </h2>
-        <p class="panel-subtitle">
-          选择你的冒险旅程
-        </p>
+        <p class="panel-subtitle">选择你的冒险旅程</p>
       </div>
 
       <div class="panel-actions">
-        <button
-          class="action-btn new-btn"
-          @click="startNewGame"
-        >
-          新建游戏
-        </button>
-        <button
-          class="action-btn refresh-btn"
-          @click="fetchSaves"
-        >
-          刷新列表
-        </button>
+        <button class="action-btn new-btn" @click="startNewGame">新建游戏</button>
+        <button class="action-btn refresh-btn" @click="fetchSaves">刷新列表</button>
       </div>
 
       <div class="save-table-wrapper">
@@ -40,56 +22,26 @@
           empty-text="暂无存档，点击上方按钮开始新游戏"
           @row-click="handleRowClick"
         >
-          <el-table-column
-            label="#"
-            width="72"
-          >
+          <el-table-column label="#" width="72">
             <template #default="scope">
               {{ scope.$index + 1 }}
             </template>
           </el-table-column>
-          <el-table-column
-            prop="saveId"
-            label="存档ID"
-            min-width="110"
-          />
-          <el-table-column
-            label="保存时间"
-            min-width="180"
-          >
+          <el-table-column prop="saveId" label="存档ID" min-width="110" />
+          <el-table-column label="保存时间" min-width="180">
             <template #default="{ row }">
               {{ formatTime(row.saveTime) }}
             </template>
           </el-table-column>
-          <el-table-column
-            prop="playerScore"
-            label="分数"
-            min-width="100"
-          />
-          <el-table-column
-            prop="playerStamina"
-            label="体力"
-            min-width="100"
-          />
-          <el-table-column
-            label="操作"
-            width="140"
-            align="center"
-          >
+          <el-table-column prop="playerScore" label="分数" min-width="100" />
+          <el-table-column prop="playerStamina" label="体力" min-width="100" />
+          <el-table-column label="操作" width="140" align="center">
             <template #default="{ row, $index }">
               <div class="table-actions">
-                <el-button
-                  type="primary"
-                  link
-                  @click.stop="readSave(row.saveId, $index)"
-                >
+                <el-button type="primary" link @click.stop="readSave(row.saveId, $index)">
                   读取
                 </el-button>
-                <el-button
-                  type="danger"
-                  link
-                  @click.stop="deleteSave(row.saveId)"
-                >
+                <el-button type="danger" link @click.stop="deleteSave(row.saveId)">
                   删除
                 </el-button>
               </div>
@@ -268,8 +220,7 @@ onMounted(fetchSaves)
   position: relative;
   padding: 30px 30px 20px;
   text-align: center;
-  background:
-    linear-gradient(135deg, rgba(79, 70, 229, 0.22), rgba(14, 165, 233, 0.12));
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.22), rgba(14, 165, 233, 0.12));
   border-bottom: 1px solid rgba(148, 163, 184, 0.16);
 }
 
@@ -338,7 +289,11 @@ onMounted(fetchSaves)
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s, background 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s,
+    border-color 0.2s,
+    background 0.2s;
 }
 
 .action-btn:hover {

@@ -43,11 +43,7 @@ describe('LeaderBoard.vue', () => {
       'Charlie',
       'Bravo',
     ])
-    expect(wrapper.findAll('.score').map((node) => node.text())).toEqual([
-      '40',
-      '30',
-      '20',
-    ])
+    expect(wrapper.findAll('.score').map((node) => node.text())).toEqual(['40', '30', '20'])
 
     wrapper.unmount()
   })
@@ -80,10 +76,7 @@ describe('LeaderBoard.vue', () => {
     await flushPromises()
 
     expect(mocks.getList).toHaveBeenCalledTimes(2)
-    expect(wrapper.findAll('.name').map((node) => node.text())).toEqual([
-      'Delta',
-      'Alpha',
-    ])
+    expect(wrapper.findAll('.name').map((node) => node.text())).toEqual(['Delta', 'Alpha'])
 
     wrapper.unmount()
   })

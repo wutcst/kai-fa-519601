@@ -81,9 +81,7 @@ async function mountArchive() {
 }
 
 function findButtonByText(wrapper: ReturnType<typeof mount>, text: string) {
-  return wrapper
-    .findAll('button')
-    .find((button) => button.text().includes(text))
+  return wrapper.findAll('button').find((button) => button.text().includes(text))
 }
 
 describe('Archive.vue', () => {
