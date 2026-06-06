@@ -2,7 +2,10 @@
   <div class="leaderboard">
     <h4>排行榜</h4>
     <ul>
-      <li v-for="(p, idx) in players" :key="p.playerId">
+      <li
+        v-for="(p, idx) in players"
+        :key="p.playerId"
+      >
         <span class="rank">{{ idx + 1 }}</span>
         <span class="name">{{ p.playerName }}</span>
         <span class="score">{{ p.playerScore }}</span>

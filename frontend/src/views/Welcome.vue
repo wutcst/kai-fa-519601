@@ -16,7 +16,11 @@
 
     <!-- 浮动形状 -->
     <div class="floating-shapes">
-      <div v-for="n in 4" :key="`shape-${n}`" class="shape" />
+      <div
+        v-for="n in 4"
+        :key="`shape-${n}`"
+        class="shape"
+      />
     </div>
 
     <!-- 子路由 -->

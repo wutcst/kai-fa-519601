@@ -5,22 +5,36 @@
     </div>
     <div class="hint-row">
       <div class="dir-pad">
-        <div class="key">W</div>
-        <div class="key">A</div>
-        <div class="key">S</div>
-        <div class="key">D</div>
+        <div class="key">
+          W
+        </div>
+        <div class="key">
+          A
+        </div>
+        <div class="key">
+          S
+        </div>
+        <div class="key">
+          D
+        </div>
       </div>
     </div>
     <div class="hint-row">
-      <div class="key key-single">R</div>
+      <div class="key key-single">
+        R
+      </div>
       <span class="hint-label">回到上一房间</span>
     </div>
     <div class="hint-row">
-      <div class="key key-single">H</div>
+      <div class="key key-single">
+        H
+      </div>
       <span class="hint-label">回到初始房间</span>
     </div>
     <div class="hint-row">
-      <div class="key key-single">B</div>
+      <div class="key key-single">
+        B
+      </div>
       <span class="hint-label">打开背包</span>
     </div>
   </div>

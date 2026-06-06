@@ -1,12 +1,25 @@
 <template>
   <div class="player-info">
     <div class="avatar">
-      <img v-if="player.playerAvatarUrl" :src="player.playerAvatarUrl" alt="avatar" />
-      <div v-else class="avatar-placeholder">{{ player.playerName?.charAt(0) }}</div>
+      <img
+        v-if="player.playerAvatarUrl"
+        :src="player.playerAvatarUrl"
+        alt="avatar"
+      >
+      <div
+        v-else
+        class="avatar-placeholder"
+      >
+        {{ player.playerName?.charAt(0) }}
+      </div>
     </div>
     <div class="info">
-      <div class="name">{{ player.playerName }}</div>
-      <div class="stat">分数：{{ player.playerScore }}</div>
+      <div class="name">
+        {{ player.playerName }}
+      </div>
+      <div class="stat">
+        分数：{{ player.playerScore }}
+      </div>
       <div class="stat">
         体力：{{ player.playerStamina }}
         <el-progress

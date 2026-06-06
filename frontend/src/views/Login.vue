@@ -1,7 +1,10 @@
 <template>
   <div class="login-page">
     <!-- ========== Start Screen ========== -->
-    <transition name="screen-fade" mode="out-in">
+    <transition
+      name="screen-fade"
+      mode="out-in"
+    >
       <div
         v-if="showStartScreen"
         key="start"
@@ -10,12 +13,16 @@
       >
         <div class="start-content">
           <div class="start-text">
-            <h1 class="start-title">Zuulventurers</h1>
-            <p class="start-prompt">点击屏幕开始</p>
+            <h1 class="start-title">
+              Zuulventurers
+            </h1>
+            <p class="start-prompt">
+              点击屏幕开始
+            </p>
             <div class="click-indicator">
-              <div class="ripple"></div>
-              <div class="ripple"></div>
-              <div class="ripple"></div>
+              <div class="ripple" />
+              <div class="ripple" />
+              <div class="ripple" />
             </div>
           </div>
         </div>
@@ -23,11 +30,22 @@
     </transition>
 
     <!-- ========== Welcome Screen ========== -->
-    <transition name="screen-fade" mode="out-in">
-      <div v-if="showWelcome" key="welcome" class="welcome-screen">
+    <transition
+      name="screen-fade"
+      mode="out-in"
+    >
+      <div
+        v-if="showWelcome"
+        key="welcome"
+        class="welcome-screen"
+      >
         <div class="welcome-content">
-          <h1 class="game-title">Zuulventurers</h1>
-          <p class="game-subtitle">开启你的史诗冒险之旅</p>
+          <h1 class="game-title">
+            Zuulventurers
+          </h1>
+          <p class="game-subtitle">
+            开启你的史诗冒险之旅
+          </p>
 
           <div class="welcome-buttons">
             <button
@@ -53,7 +71,10 @@
     </transition>
 
     <!-- ========== Auth Card ========== -->
-    <transition name="screen-fade" mode="out-in">
+    <transition
+      name="screen-fade"
+      mode="out-in"
+    >
       <div
         v-if="showAuth"
         key="auth"
@@ -78,14 +99,18 @@
               src="/images/login-bg.png"
               class="login-bg"
               alt="login splash"
-            />
+            >
           </template>
           <!-- 注册模式：显示默认头像说明 -->
           <template v-else>
             <div class="default-avatar-panel">
               <div class="default-avatar-card">
-                <div class="default-avatar-circle">Z</div>
-                <p class="default-avatar-title">默认头像</p>
+                <div class="default-avatar-circle">
+                  Z
+                </div>
+                <p class="default-avatar-title">
+                  默认头像
+                </p>
                 <p class="default-avatar-text">
                   当前版本注册后将统一分配系统默认头像，无需手动上传。
                 </p>
@@ -95,10 +120,19 @@
         </div>
 
         <!-- 右侧表单面板 -->
-        <transition name="fade-slide" mode="out-in">
+        <transition
+          name="fade-slide"
+          mode="out-in"
+        >
           <!-- ===== 登录表单 ===== -->
-          <div v-if="!isRegisterMode" key="login" class="auth-form">
-            <h2 class="form-title">登录游戏</h2>
+          <div
+            v-if="!isRegisterMode"
+            key="login"
+            class="auth-form"
+          >
+            <h2 class="form-title">
+              登录游戏
+            </h2>
 
             <form @submit.prevent="handleLogin">
               <div class="form-group">
@@ -109,7 +143,7 @@
                   type="text"
                   placeholder="请输入用户名"
                   required
-                />
+                >
               </div>
 
               <div class="form-group">
@@ -120,7 +154,7 @@
                   type="password"
                   placeholder="请输入密码"
                   required
-                />
+                >
               </div>
 
               <div class="checkbox-group">
@@ -128,9 +162,12 @@
                   id="remember"
                   v-model="loginData.rememberMe"
                   type="checkbox"
-                />
+                >
                 <label for="remember">记住我</label>
-                <a class="forgot-password" href="#">忘记密码?</a>
+                <a
+                  class="forgot-password"
+                  href="#"
+                >忘记密码?</a>
               </div>
 
               <button
@@ -152,8 +189,14 @@
           </div>
 
           <!-- ===== 注册表单 ===== -->
-          <div v-else key="register" class="auth-form">
-            <h2 class="form-title">创建新账号</h2>
+          <div
+            v-else
+            key="register"
+            class="auth-form"
+          >
+            <h2 class="form-title">
+              创建新账号
+            </h2>
 
             <div class="default-avatar-tip">
               <span class="default-avatar-badge">默认头像</span>
@@ -169,7 +212,7 @@
                   type="text"
                   placeholder="请输入用户名"
                   required
-                />
+                >
               </div>
 
               <div class="form-group">
@@ -180,7 +223,7 @@
                   type="password"
                   placeholder="请输入密码"
                   required
-                />
+                >
               </div>
 
               <div class="form-group">
@@ -191,7 +234,7 @@
                   type="password"
                   placeholder="请再次输入密码"
                   required
-                />
+                >
               </div>
 
               <button

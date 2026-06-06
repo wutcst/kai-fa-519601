@@ -1,14 +1,23 @@
 <template>
-  <div class="game-container" :style="backgroundStyle">
+  <div
+    class="game-container"
+    :style="backgroundStyle"
+  >
     <div class="game-layout">
       <aside class="side-panel player-panel">
         <div class="player-shell">
           <div class="panel-heading">
             <span class="panel-kicker">Player</span>
-            <h2 class="panel-title">冒险者状态</h2>
+            <h2 class="panel-title">
+              冒险者状态
+            </h2>
           </div>
           <PlayerInfo class="player-card" />
-          <el-button class="backpack-trigger" type="primary" @click="openBackpack">
+          <el-button
+            class="backpack-trigger"
+            type="primary"
+            @click="openBackpack"
+          >
             背包 (B)
           </el-button>
         </div>
@@ -23,18 +32,47 @@
           <GameKeyHints />
           <div class="game-scene">
             <div class="nav-arrows">
-              <button class="arrow up" :disabled="!canMove('up') || isMoving" @click="move('up')">W</button>
+              <button
+                class="arrow up"
+                :disabled="!canMove('up') || isMoving"
+                @click="move('up')"
+              >
+                W
+              </button>
               <div class="arrow-row">
-                <button class="arrow left" :disabled="!canMove('left') || isMoving" @click="move('left')">A</button>
-                <button class="arrow down" :disabled="!canMove('down') || isMoving" @click="move('down')">S</button>
-                <button class="arrow right" :disabled="!canMove('right') || isMoving" @click="move('right')">D</button>
+                <button
+                  class="arrow left"
+                  :disabled="!canMove('left') || isMoving"
+                  @click="move('left')"
+                >
+                  A
+                </button>
+                <button
+                  class="arrow down"
+                  :disabled="!canMove('down') || isMoving"
+                  @click="move('down')"
+                >
+                  S
+                </button>
+                <button
+                  class="arrow right"
+                  :disabled="!canMove('right') || isMoving"
+                  @click="move('right')"
+                >
+                  D
+                </button>
               </div>
             </div>
             <div class="room-info">
               <h3>{{ currentRoom.roomName }}</h3>
-              <p class="room-desc">{{ getRoomDescription(currentRoom.roomName) }}</p>
+              <p class="room-desc">
+                {{ getRoomDescription(currentRoom.roomName) }}
+              </p>
               <div class="scene-objects">
-                <div class="scene-object crate" @click="openCrate">
+                <div
+                  class="scene-object crate"
+                  @click="openCrate"
+                >
                   <span class="object-icon">📦</span>
                   <span class="object-label">木箱</span>
                 </div>
@@ -53,10 +91,16 @@
                   <span>房间物品</span>
                   <span class="room-item-count">{{ currentRoom.itemList.length }} 件</span>
                 </div>
-                <div v-if="currentRoom.itemList.length === 0" class="room-item-empty">
+                <div
+                  v-if="currentRoom.itemList.length === 0"
+                  class="room-item-empty"
+                >
                   当前房间暂无可拾取物品
                 </div>
-                <ul v-else class="room-item-list">
+                <ul
+                  v-else
+                  class="room-item-list"
+                >
                   <li
                     v-for="item in currentRoom.itemList"
                     :key="`room-item-${item.itemId}`"
@@ -92,11 +136,20 @@
     </div>
 
     <!-- 木箱弹窗 -->
-    <div v-if="showCrate" class="crate-overlay" @click.self="showCrate = false">
+    <div
+      v-if="showCrate"
+      class="crate-overlay"
+      @click.self="showCrate = false"
+    >
       <div class="crate-modal">
         <div class="crate-header">
           <h3>📦 木箱中的物品</h3>
-          <button class="close-btn" @click="showCrate = false">✕</button>
+          <button
+            class="close-btn"
+            @click="showCrate = false"
+          >
+            ✕
+          </button>
         </div>
         <div class="crate-items">
           <div
@@ -112,11 +165,25 @@
               <span class="crate-item-meta">重量: {{ item.itemSize }} | 价值: {{ item.itemValue }}</span>
             </div>
           </div>
-          <div v-if="currentRoom.itemList.length === 0" class="crate-empty">箱子里空空如也…</div>
+          <div
+            v-if="currentRoom.itemList.length === 0"
+            class="crate-empty"
+          >
+            箱子里空空如也…
+          </div>
         </div>
         <div class="crate-footer">
-          <p v-if="backpackCount >= backpackSize" class="inventory-full-warning">背包已满！请先清理背包空间。</p>
-          <el-button type="primary" :disabled="backpackCount >= backpackSize || currentRoom.itemList.length === 0" @click="takeAllItems">
+          <p
+            v-if="backpackCount >= backpackSize"
+            class="inventory-full-warning"
+          >
+            背包已满！请先清理背包空间。
+          </p>
+          <el-button
+            type="primary"
+            :disabled="backpackCount >= backpackSize || currentRoom.itemList.length === 0"
+            @click="takeAllItems"
+          >
             全部拾取
           </el-button>
         </div>
@@ -126,7 +193,12 @@
 
     <!-- 操作消息提示 -->
     <transition name="msg-fade">
-      <div v-if="actionMessage" class="action-message">{{ actionMessage }}</div>
+      <div
+        v-if="actionMessage"
+        class="action-message"
+      >
+        {{ actionMessage }}
+      </div>
     </transition>
   </div>
 </template>
