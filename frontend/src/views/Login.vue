@@ -422,7 +422,7 @@ async function handleLogin() {
     } else if (!err.response) {
       ElMessage.error('无法连接到服务器，请检查网络连接')
     } else {
-      ElMessage.error(err.response?.data?.msg || '服务器错误，请稍后重试')
+      ElMessage.error(err.response?.data?.message || '服务器错误，请稍后重试')
     }
   } finally {
     loading.value = false
@@ -463,7 +463,7 @@ async function handleRegister() {
     if (err.response?.status === 409) {
       ElMessage.error('用户名已存在，请更换其他用户名')
     } else {
-      ElMessage.error(err.response?.data?.msg || '注册失败，请重试')
+      ElMessage.error(err.response?.data?.message || '注册失败，请重试')
     }
   } finally {
     loading.value = false
