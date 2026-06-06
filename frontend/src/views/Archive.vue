@@ -1,62 +1,55 @@
 <template>
   <div class="archive-page">
     <div class="archive-panel">
-      <!-- 标题区 -->
       <div class="panel-header">
-        <button class="close-btn" title="返回登录" @click="backToLogin">✖</button>
+        <button class="close-btn" title="返回登录" @click="backToLogin">×</button>
         <h2 class="panel-title">
-          <span class="title-icon">🎮</span> 游戏存档
+          <span class="title-icon">存</span>
+          游戏存档
         </h2>
         <p class="panel-subtitle">选择你的冒险旅程</p>
       </div>
 
-      <!-- 操作栏 -->
       <div class="panel-actions">
-        <button class="action-btn new-btn" @click="startNewGame">＋ 新建游戏</button>
-        <button class="action-btn refresh-btn" @click="fetchSaves">↻ 刷新列表</button>
+        <button class="action-btn new-btn" @click="startNewGame">新建游戏</button>
+        <button class="action-btn refresh-btn" @click="fetchSaves">刷新列表</button>
       </div>
 
-      <!-- 存档槽列表 -->
-      <div class="save-slots">
-        <div
-          v-for="(save, idx) in saves"
-          :key="save.saveId"
-          class="save-slot"
-          :class="{ selected: selectedSave === idx }"
-          @click="readSave(save.saveId, idx)"
+      <div class="save-table-wrapper">
+        <el-table
+          :data="saves"
+          class="save-table"
+          empty-text="暂无存档，点击上方按钮开始新游戏"
+          @row-click="handleRowClick"
         >
-          <div class="slot-number">{{ idx + 1 }}</div>
-          <div class="save-content">
-            <div class="save-info">
-              <h3 class="save-name">存档 #{{ save.saveId }}</h3>
-              <div class="save-details">
-                <span class="detail-item">分数 {{ save.playerScore }}</span>
-                <span class="detail-item">体力 {{ save.playerStamina }}</span>
-                <span class="detail-item">房间 {{ save.playerRoomId }}</span>
+          <el-table-column label="#" width="72">
+            <template #default="scope">
+              {{ scope.$index + 1 }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="saveId" label="存档ID" min-width="110" />
+          <el-table-column label="保存时间" min-width="180">
+            <template #default="{ row }">
+              {{ formatTime(row.saveTime) }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="playerScore" label="分数" min-width="100" />
+          <el-table-column prop="playerStamina" label="体力" min-width="100" />
+          <el-table-column label="操作" width="140" align="center">
+            <template #default="{ row, $index }">
+              <div class="table-actions">
+                <el-button type="primary" link @click.stop="readSave(row.saveId, $index)">
+                  读取
+                </el-button>
+                <el-button type="danger" link @click.stop="deleteSave(row.saveId)">
+                  删除
+                </el-button>
               </div>
-              <div class="save-meta">
-                <span class="save-time">{{ formatTime(save.saveTime) }}</span>
-              </div>
-            </div>
-          </div>
-          <div class="slot-actions">
-            <button
-              class="slot-btn delete-btn"
-              title="删除存档"
-              @click.stop="deleteSave(save.saveId)"
-            >
-              删除
-            </button>
-          </div>
-        </div>
-
-        <!-- 空状态 -->
-        <div v-if="saves.length === 0" class="empty-state">
-          <span class="empty-text">暂无存档，点击上方按钮开始新游戏</span>
-        </div>
+            </template>
+          </el-table-column>
+        </el-table>
       </div>
 
-      <!-- 底部 -->
       <div class="panel-footer">
         <span class="footer-text">Zuulventurers</span>
       </div>
@@ -98,6 +91,7 @@ async function fetchSaves() {
       router.push('/welcome/login')
       return
     }
+
     const res = await gameApi.getList(playerId)
     if (res.data.code === 200) {
       saves.value = res.data.data || []
@@ -117,6 +111,7 @@ async function startNewGame() {
       ElMessage.warning('请先登录')
       return
     }
+
     const res = await gameApi.new(playerId)
     if (res.data.code === 200) {
       router.push('/game')
@@ -133,8 +128,7 @@ async function readSave(saveId: number, idx: number) {
     selectedSave.value = idx
     const res = await gameApi.read(saveId)
     if (res.data.code === 200 && res.data.data) {
-      const saveData = res.data.data
-      const encoded = encodeURIComponent(JSON.stringify(saveData))
+      const encoded = encodeURIComponent(JSON.stringify(res.data.data))
       router.push({ path: '/game', query: { save: encoded } })
     } else {
       ElMessage.error(res.data.message || '读取存档失败')
@@ -151,10 +145,11 @@ async function deleteSave(saveId: number) {
       cancelButtonText: '取消',
       type: 'warning',
     })
+
     const res = await gameApi.delete(saveId)
     if (res.data.code === 200) {
       ElMessage.success('删除成功')
-      saves.value = saves.value.filter((s) => s.saveId !== saveId)
+      saves.value = saves.value.filter((save) => save.saveId !== saveId)
       selectedSave.value = saves.value.length > 0 ? 0 : null
     } else {
       ElMessage.error(res.data.message || '删除失败')
@@ -166,12 +161,19 @@ async function deleteSave(saveId: number) {
   }
 }
 
+function handleRowClick(row: SaveRecord) {
+  const idx = saves.value.findIndex((save) => save.saveId === row.saveId)
+  if (idx >= 0) {
+    readSave(row.saveId, idx)
+  }
+}
+
 function backToLogin() {
   router.push('/welcome/login')
 }
 
-function formatTime(t: string): string {
-  return dayjs(t).format('YYYY-MM-DD HH:mm')
+function formatTime(time: string): string {
+  return dayjs(time).format('YYYY-MM-DD HH:mm')
 }
 
 onMounted(fetchSaves)
@@ -189,7 +191,7 @@ onMounted(fetchSaves)
 
 .archive-panel {
   width: 100%;
-  max-width: 600px;
+  max-width: 860px;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   border-radius: 20px;
@@ -200,11 +202,17 @@ onMounted(fetchSaves)
 }
 
 @keyframes slideInUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-/* ---- 标题区 ---- */
 .panel-header {
   position: relative;
   padding: 30px 30px 20px;
@@ -218,11 +226,10 @@ onMounted(fetchSaves)
   top: 20px;
   right: 20px;
   border: none;
-  background-color: transparent;
-  font-size: 20px;
-  cursor: pointer;
+  background: transparent;
   color: #6b7280;
-  transition: color 0.2s;
+  font-size: 24px;
+  cursor: pointer;
 }
 
 .close-btn:hover {
@@ -232,7 +239,7 @@ onMounted(fetchSaves)
 .panel-title {
   margin: 0 0 8px;
   font-size: 28px;
-  font-weight: bold;
+  font-weight: 700;
   color: #1f2937;
   display: flex;
   align-items: center;
@@ -241,7 +248,15 @@ onMounted(fetchSaves)
 }
 
 .title-icon {
-  font-size: 32px;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #4f46e5;
+  color: #fff;
+  font-size: 16px;
 }
 
 .panel-subtitle {
@@ -250,7 +265,6 @@ onMounted(fetchSaves)
   font-size: 16px;
 }
 
-/* ---- 操作栏 ---- */
 .panel-actions {
   display: flex;
   gap: 12px;
@@ -292,133 +306,30 @@ onMounted(fetchSaves)
   background: rgba(107, 114, 128, 0.2);
 }
 
-/* ---- 存档槽 ---- */
-.save-slots {
+.save-table-wrapper {
   padding: 20px 30px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: 400px;
-  overflow-y: auto;
 }
 
-.save-slot {
-  display: flex;
-  align-items: center;
-  padding: 16px;
-  border: 2px solid transparent;
-  border-radius: 12px;
-  background: rgba(249, 250, 251, 0.8);
+:deep(.save-table) {
+  width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+:deep(.save-table .el-table__row) {
   cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
 }
 
-.save-slot:hover {
-  background: rgba(243, 244, 246, 0.9);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+:deep(.save-table .el-table__row:hover > td) {
+  background: rgba(79, 70, 229, 0.06) !important;
 }
 
-.save-slot.selected {
-  border-color: #4f46e5;
-  background: rgba(79, 70, 229, 0.1);
-}
-
-.slot-number {
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #4f46e5;
-  color: white;
-  display: flex;
+.table-actions {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 14px;
-  margin-right: 16px;
+  gap: 8px;
 }
 
-.save-content {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.save-info {
-  flex: 1;
-}
-
-.save-name {
-  margin: 0 0 4px;
-  font-size: 18px;
-  font-weight: bold;
-  color: #1f2937;
-}
-
-.save-details {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 4px;
-}
-
-.detail-item {
-  font-size: 14px;
-  color: #4f46e5;
-  font-weight: 500;
-}
-
-.save-meta {
-  display: flex;
-  gap: 12px;
-  font-size: 12px;
-  color: #6b7280;
-}
-
-/* ---- 槽内操作按钮 ---- */
-.slot-actions {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  opacity: 0.7;
-  transition: opacity 0.3s ease;
-}
-
-.save-slot:hover .slot-actions {
-  opacity: 1;
-}
-
-.slot-btn {
-  background: #ef4444;
-  color: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  padding: 6px 8px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  font-size: 14px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.delete-btn:hover {
-  background: rgba(239, 68, 68, 0.9);
-  transform: scale(1.05);
-}
-
-/* ---- 空状态 ---- */
-.empty-state {
-  text-align: center;
-  padding: 40px 20px;
-}
-
-.empty-text {
-  color: #9ca3af;
-  font-size: 15px;
-}
-
-/* ---- 底部 ---- */
 .panel-footer {
   padding: 15px 30px;
   text-align: center;
@@ -431,7 +342,6 @@ onMounted(fetchSaves)
   color: #9ca3af;
 }
 
-/* ---- 响应式 ---- */
 @media (max-width: 768px) {
   .archive-page {
     padding: 10px;
@@ -454,68 +364,8 @@ onMounted(fetchSaves)
     flex-direction: column;
   }
 
-  .save-slots {
+  .save-table-wrapper {
     padding: 15px 20px;
-  }
-
-  .save-content {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .save-details {
-    flex-wrap: wrap;
-  }
-
-  .slot-actions {
-    opacity: 1;
-    position: static;
-    margin-left: auto;
-  }
-
-  .slot-btn {
-    padding: 4px 6px;
-    font-size: 12px;
-  }
-}
-
-@media (max-width: 480px) {
-  .panel-header {
-    padding: 15px;
-  }
-
-  .panel-title {
-    font-size: 20px;
-  }
-
-  .save-slots {
-    padding: 12px 16px;
-    gap: 10px;
-  }
-
-  .slot-number {
-    width: 28px;
-    height: 28px;
-    font-size: 12px;
-    margin-right: 12px;
-  }
-
-  .save-name {
-    font-size: 16px;
-  }
-
-  .detail-item {
-    font-size: 12px;
-  }
-
-  .save-meta {
-    font-size: 10px;
-  }
-
-  .close-btn {
-    top: 16px;
-    right: 16px;
   }
 }
 </style>
