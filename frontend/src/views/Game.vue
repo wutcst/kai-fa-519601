@@ -62,9 +62,22 @@
                     :key="`room-item-${item.itemId}`"
                     class="room-item-row"
                   >
-                    <span class="room-item-name">{{ item.itemName }}</span>
-                    <span class="room-item-meta">重量 {{ item.itemSize }}</span>
-                    <span class="room-item-meta">价值 {{ item.itemValue }}</span>
+                    <div class="room-item-summary">
+                      <span class="room-item-name">{{ item.itemName }}</span>
+                      <div class="room-item-stats">
+                        <span class="room-item-meta">重量 {{ item.itemSize }}</span>
+                        <span class="room-item-meta">价值 {{ item.itemValue }}</span>
+                      </div>
+                    </div>
+                    <el-button
+                      class="room-item-pick"
+                      size="small"
+                      type="primary"
+                      :disabled="backpackCount >= backpackSize"
+                      @click="pickItem(item.itemId)"
+                    >
+                      拾取
+                    </el-button>
                   </li>
                 </ul>
               </div>
@@ -731,14 +744,31 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
 }
 
 .room-item-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  gap: 12px;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+  flex-wrap: wrap;
   padding: 10px 12px;
   border-radius: 14px;
   background: rgba(15, 23, 42, 0.26);
   border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.room-item-summary {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.room-item-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }
 
 .room-item-name {
@@ -752,6 +782,10 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
   font-size: 12px;
   color: rgba(191, 219, 254, 0.8);
   white-space: nowrap;
+}
+
+.room-item-pick {
+  flex-shrink: 0;
 }
 
 .scene-object {
@@ -962,8 +996,11 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
   }
 
   .room-item-row {
-    grid-template-columns: 1fr;
-    text-align: left;
+    align-items: flex-start;
+  }
+
+  .room-item-pick {
+    width: 100%;
   }
 
   .crate-modal {
