@@ -48,6 +48,26 @@
                   <span class="object-label">{{ item.itemName }}</span>
                 </div>
               </div>
+              <div class="room-item-panel">
+                <div class="room-item-panel-header">
+                  <span>房间物品</span>
+                  <span class="room-item-count">{{ currentRoom.itemList.length }} 件</span>
+                </div>
+                <div v-if="currentRoom.itemList.length === 0" class="room-item-empty">
+                  当前房间暂无可拾取物品
+                </div>
+                <ul v-else class="room-item-list">
+                  <li
+                    v-for="item in currentRoom.itemList"
+                    :key="`room-item-${item.itemId}`"
+                    class="room-item-row"
+                  >
+                    <span class="room-item-name">{{ item.itemName }}</span>
+                    <span class="room-item-meta">重量 {{ item.itemSize }}</span>
+                    <span class="room-item-meta">价值 {{ item.itemValue }}</span>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
@@ -668,6 +688,72 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
   margin-top: 16px;
 }
 
+.room-item-panel {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.room-item-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.room-item-count {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(79, 70, 229, 0.18);
+  color: #c4b5fd;
+  font-size: 12px;
+}
+
+.room-item-empty {
+  padding: 14px 12px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.28);
+  color: rgba(226, 232, 240, 0.66);
+  font-size: 13px;
+}
+
+.room-item-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.room-item-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.26);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.room-item-name {
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.room-item-meta {
+  font-size: 12px;
+  color: rgba(191, 219, 254, 0.8);
+  white-space: nowrap;
+}
+
 .scene-object {
   display: flex;
   flex-direction: column;
@@ -873,6 +959,11 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
 
   .scene-objects {
     justify-content: center;
+  }
+
+  .room-item-row {
+    grid-template-columns: 1fr;
+    text-align: left;
   }
 
   .crate-modal {
