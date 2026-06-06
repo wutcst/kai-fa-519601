@@ -7,11 +7,11 @@
     <GameKeyHints />
     <div class="game-scene">
       <div class="nav-arrows">
-        <button class="arrow up" @click="move('up')">W</button>
+        <button class="arrow up" :disabled="!canMove('up') || isMoving" @click="move('up')">W</button>
         <div class="arrow-row">
-          <button class="arrow left" @click="move('left')">A</button>
-          <button class="arrow down" @click="move('down')">S</button>
-          <button class="arrow right" @click="move('right')">D</button>
+          <button class="arrow left" :disabled="!canMove('left') || isMoving" @click="move('left')">A</button>
+          <button class="arrow down" :disabled="!canMove('down') || isMoving" @click="move('down')">S</button>
+          <button class="arrow right" :disabled="!canMove('right') || isMoving" @click="move('right')">D</button>
         </div>
       </div>
       <div class="room-info">
@@ -84,7 +84,29 @@ import LeaderBoard from '@/components/LeaderBoard.vue'
 import Backpack from '@/components/Backpack.vue'
 import GameKeyHints from '@/components/GameKeyHints.vue'
 
-const currentRoom = ref<any>({ roomName: '', itemList: [] })
+type Direction = 'up' | 'down' | 'left' | 'right'
+
+interface RoomDoors {
+  up: boolean
+  down: boolean
+  left: boolean
+  right: boolean
+}
+
+interface RoomItem {
+  itemId: number
+  itemName: string
+  itemSize: number
+  itemValue: number
+}
+
+interface RoomState {
+  roomName: string
+  itemList: RoomItem[]
+  doors?: Partial<RoomDoors>
+}
+
+const currentRoom = ref<RoomState>({ roomName: '', itemList: [] })
 const backpackRef = ref<InstanceType<typeof Backpack> | null>(null)
 const actionMessage = ref('')
 const backpackSize = ref(0)
@@ -93,6 +115,40 @@ const isMoving = ref(false)
 const countdown = ref<number | null>(null)
 const showCrate = ref(false)
 const isMobile = ref(window.matchMedia('(max-width: 768px)').matches)
+
+function normalizeDoors(doors: unknown): Partial<RoomDoors> | undefined {
+  if (!doors || typeof doors !== 'object') {
+    return undefined
+  }
+
+  const rawDoors = doors as Partial<Record<Direction, unknown>>
+
+  return {
+    up: rawDoors.up === true,
+    down: rawDoors.down === true,
+    left: rawDoors.left === true,
+    right: rawDoors.right === true,
+  }
+}
+
+function normalizeRoomData(data: any): RoomState {
+  return {
+    ...data,
+    roomName: data?.roomName ?? '',
+    itemList: data?.itemList ?? data?.items ?? [],
+    doors: normalizeDoors(data?.doors),
+  }
+}
+
+function canMove(direction: Direction): boolean {
+  const doors = currentRoom.value.doors
+
+  if (!doors) {
+    return true
+  }
+
+  return doors[direction] ?? true
+}
 
 const iconMap: Record<string, string> = {
   火把: '🔥',
@@ -179,7 +235,7 @@ async function loadRoom() {
   if (infoRes.data.code === 200) {
     const roomId = infoRes.data.data.playerRoomId
     const roomRes = await roomApi.getInfo(roomId)
-    if (roomRes.data.code === 200) currentRoom.value = roomRes.data.data
+    if (roomRes.data.code === 200) currentRoom.value = normalizeRoomData(roomRes.data.data)
   }
 }
 
@@ -196,7 +252,13 @@ async function loadBackpack() {
   }
 }
 
-async function move(direction: string) {
+async function move(direction: Direction) {
+  if (!canMove(direction)) {
+    actionMessage.value = '这个方向没有门'
+    setTimeout(() => { actionMessage.value = '' }, 2000)
+    return
+  }
+
   if (isMoving.value) return
   isMoving.value = true
   const playerId = Number(localStorage.getItem('playerId'))
@@ -363,7 +425,7 @@ async function takeAllItems() {
 }
 
 function handleKeydown(e: KeyboardEvent) {
-  const map: Record<string, string> = { w: 'up', s: 'down', a: 'left', d: 'right' }
+  const map: Record<string, Direction> = { w: 'up', s: 'down', a: 'left', d: 'right' }
   const dir = map[e.key.toLowerCase()]
   if (dir) move(dir)
   if (e.key.toLowerCase() === 'r') {
@@ -434,6 +496,11 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
   background: #2a2a4a;
   color: #fff;
   border-radius: 6px;
+}
+
+.arrow:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
 }
 
 .room-info {
