@@ -532,6 +532,13 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
   min-height: 0;
 }
 
+.leaderboard-panel {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+  height: calc(100vh - 48px);
+}
+
 .player-shell,
 .scene-shell {
   position: relative;
@@ -940,6 +947,8 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
   }
 
   .leaderboard-panel {
+    position: static;
+    height: auto;
     grid-column: 1 / -1;
   }
 }
