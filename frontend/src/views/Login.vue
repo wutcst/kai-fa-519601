@@ -407,8 +407,16 @@ async function handleLogin() {
 
     if (res.data.code === 200) {
       const playerId = res.data.data.playerId
+      const token = res.data.data.token
+
       localStorage.setItem('playerId', String(playerId))
       localStorage.setItem('roomId', '1')
+      if (typeof token === 'string' && token) {
+        localStorage.setItem('token', token)
+      } else {
+        localStorage.removeItem('token')
+      }
+
       ElMessage.success('登录成功！')
       router.push('/welcome/archive')
     } else {
