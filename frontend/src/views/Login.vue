@@ -71,7 +71,7 @@
         </button>
 
         <!-- 左侧视觉面板 -->
-        <div v-show="!isMobile" class="auth-image">
+        <div class="auth-image">
           <!-- 登录模式：显示背景图 -->
           <template v-if="!isRegisterMode">
             <img
@@ -80,42 +80,16 @@
               alt="login splash"
             />
           </template>
-          <!-- 注册模式：显示头像上传 -->
+          <!-- 注册模式：显示默认头像说明 -->
           <template v-else>
-            <div class="avatar-upload">
-              <transition name="avatar-fade" mode="out-in">
-                <template v-if="avatarPreview">
-                  <div
-                    key="preview"
-                    class="avatar-placeholder"
-                    @click="triggerFileInput"
-                  >
-                    <img
-                      :src="avatarPreview"
-                      alt="头像预览"
-                      class="avatar-preview"
-                    />
-                    <span>点击更换头像</span>
-                  </div>
-                </template>
-                <template v-else>
-                  <div
-                    key="placeholder"
-                    class="avatar-placeholder"
-                    @click="triggerFileInput"
-                  >
-                    <div class="plus">+</div>
-                    <span>上传头像</span>
-                  </div>
-                </template>
-              </transition>
-              <input
-                ref="avatarInputRef"
-                type="file"
-                accept="image/*"
-                style="display: none"
-                @change="onAvatarChange"
-              />
+            <div class="default-avatar-panel">
+              <div class="default-avatar-card">
+                <div class="default-avatar-circle">Z</div>
+                <p class="default-avatar-title">默认头像</p>
+                <p class="default-avatar-text">
+                  当前版本注册后将统一分配系统默认头像，无需手动上传。
+                </p>
+              </div>
             </div>
           </template>
         </div>
@@ -181,41 +155,9 @@
           <div v-else key="register" class="auth-form">
             <h2 class="form-title">创建新账号</h2>
 
-            <!-- 移动端头像上传 -->
-            <div v-if="isMobile" class="avatar-upload avatar-upload-mobile">
-              <transition name="avatar-fade" mode="out-in">
-                <template v-if="avatarPreview">
-                  <div
-                    key="preview"
-                    class="avatar-placeholder"
-                    @click="triggerFileInput"
-                  >
-                    <img
-                      :src="avatarPreview"
-                      alt="头像预览"
-                      class="avatar-preview"
-                    />
-                    <span>点击更换头像</span>
-                  </div>
-                </template>
-                <template v-else>
-                  <div
-                    key="placeholder"
-                    class="avatar-placeholder"
-                    @click="triggerFileInput"
-                  >
-                    <div class="plus">+</div>
-                    <span>上传头像</span>
-                  </div>
-                </template>
-              </transition>
-              <input
-                ref="avatarInputRef"
-                type="file"
-                accept="image/*"
-                style="display: none"
-                @change="onAvatarChange"
-              />
+            <div class="default-avatar-tip">
+              <span class="default-avatar-badge">默认头像</span>
+              <p>注册成功后系统会自动分配头像，当前页面不再提供上传入口。</p>
             </div>
 
             <form @submit.prevent="handleRegister">
@@ -276,7 +218,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted, onBeforeUnmount } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { playerApi } from '@/api'
@@ -303,7 +245,6 @@ function startAuth() {
 function backToWelcome() {
   showAuth.value = false
   isRegisterMode.value = false
-  resetAvatarState()
   setTimeout(() => {
     showWelcome.value = true
   }, 900)
@@ -336,59 +277,6 @@ const registerData = reactive({
 
 function toggleMode() {
   isRegisterMode.value = !isRegisterMode.value
-  resetAvatarState()
-}
-
-// ==================== 头像上传 ====================
-const avatarInputRef = ref<HTMLInputElement | null>(null)
-const avatarFile = ref<File | null>(null)
-const avatarPreview = ref<string | null>(null)
-
-const isMobile = ref(window.innerWidth <= 768)
-function handleResize() {
-  isMobile.value = window.innerWidth <= 768
-}
-
-onMounted(() => window.addEventListener('resize', handleResize))
-onBeforeUnmount(() => window.removeEventListener('resize', handleResize))
-
-function triggerFileInput() {
-  avatarInputRef.value?.click()
-}
-
-function resetAvatarState() {
-  avatarFile.value = null
-  avatarPreview.value = null
-  if (avatarInputRef.value) avatarInputRef.value.value = ''
-}
-
-function validateFile(file: File): boolean {
-  const types = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp']
-  const max = 5 * 1024 * 1024
-  if (!types.includes(file.type)) {
-    ElMessage.warning('请选择有效的图片文件')
-    return false
-  }
-  if (file.size > max) {
-    ElMessage.warning('图片文件大小不能超过5MB')
-    return false
-  }
-  return true
-}
-
-function onAvatarChange(e: Event) {
-  const input = e.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file || !validateFile(file)) {
-    input.value = ''
-    return
-  }
-  avatarFile.value = file
-  const reader = new FileReader()
-  reader.onload = (ev) => {
-    avatarPreview.value = ev.target?.result as string
-  }
-  reader.readAsDataURL(file)
 }
 
 // ==================== 登录 ====================
@@ -407,8 +295,16 @@ async function handleLogin() {
 
     if (res.data.code === 200) {
       const playerId = res.data.data.playerId
+      const token = res.data.data.token
+
       localStorage.setItem('playerId', String(playerId))
       localStorage.setItem('roomId', '1')
+      if (typeof token === 'string' && token) {
+        localStorage.setItem('token', token)
+      } else {
+        localStorage.removeItem('token')
+      }
+
       ElMessage.success('登录成功！')
       router.push('/welcome/archive')
     } else {
@@ -439,17 +335,12 @@ async function handleRegister() {
     ElMessage.warning('两次输入的密码不一致')
     return
   }
-  if (!avatarFile.value) {
-    ElMessage.warning('请上传头像')
-    return
-  }
 
   loading.value = true
   try {
     const fd = new FormData()
     fd.append('playerName', registerData.username)
     fd.append('password', registerData.password)
-    fd.append('avatar', avatarFile.value)
 
     await playerApi.register(fd)
 
@@ -457,7 +348,6 @@ async function handleRegister() {
     registerData.username = ''
     registerData.password = ''
     registerData.confirm = ''
-    resetAvatarState()
     toggleMode()
   } catch (err: any) {
     if (err.response?.status === 409) {
@@ -725,66 +615,92 @@ async function handleRegister() {
   object-fit: cover;
 }
 
-/* ---- 头像上传 ---- */
-.avatar-upload {
+/* ---- 默认头像说明 ---- */
+.default-avatar-panel {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   width: 100%;
   height: 100%;
+  padding: 36px;
+  box-sizing: border-box;
+  background:
+    radial-gradient(circle at top, rgba(79, 70, 229, 0.32), transparent 45%),
+    linear-gradient(160deg, rgba(15, 23, 42, 0.96), rgba(49, 46, 129, 0.92));
 }
 
-.avatar-placeholder {
+.default-avatar-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  color: #6b7280;
-  transition: color 0.3s;
+  gap: 16px;
+  width: 100%;
+  max-width: 280px;
+  padding: 36px 28px;
+  border-radius: 28px;
+  text-align: center;
+  color: #e2e8f0;
+  background: rgba(15, 23, 42, 0.46);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 24px 50px rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(18px);
 }
 
-.avatar-placeholder:hover {
-  color: #4f46e5;
-}
-
-.avatar-placeholder .plus {
-  font-size: 48px;
-  font-weight: 300;
-  width: 120px;
-  height: 120px;
-  border: 2px dashed #d1d5db;
+.default-avatar-circle {
+  width: 128px;
+  height: 128px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: border-color 0.3s;
+  font-size: 52px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #fff;
+  background: linear-gradient(135deg, #4338ca, #0ea5e9);
+  box-shadow:
+    0 14px 30px rgba(37, 99, 235, 0.3),
+    inset 0 1px 10px rgba(255, 255, 255, 0.2);
 }
 
-.avatar-placeholder:hover .plus {
-  border-color: #4f46e5;
+.default-avatar-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
 }
 
-.avatar-preview {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid #4f46e5;
+.default-avatar-text {
+  margin: 0;
+  line-height: 1.7;
+  font-size: 14px;
+  color: rgba(226, 232, 240, 0.86);
 }
 
-.avatar-upload-mobile {
+.default-avatar-tip {
   margin-bottom: 20px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: rgba(79, 70, 229, 0.08);
+  border: 1px solid rgba(79, 70, 229, 0.16);
 }
 
-.avatar-fade-enter-active,
-.avatar-fade-leave-active {
-  transition: opacity 0.3s ease;
+.default-avatar-tip p {
+  margin: 10px 0 0;
+  color: #4b5563;
+  line-height: 1.6;
+  font-size: 13px;
 }
-.avatar-fade-enter-from,
-.avatar-fade-leave-to {
-  opacity: 0;
+
+.default-avatar-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #4338ca;
+  background: rgba(79, 70, 229, 0.12);
 }
 
 /* ---- 右侧表单 ---- */

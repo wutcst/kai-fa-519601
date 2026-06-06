@@ -2,9 +2,20 @@ import axios from 'axios'
 
 // 统一 axios 实例
 const api = axios.create({
-  baseURL: '',
+  baseURL: '/api',
   withCredentials: true,
 })
+
+function clearAuthState() {
+  localStorage.removeItem('token')
+  localStorage.removeItem('playerId')
+}
+
+function redirectToLogin() {
+  if (window.location.hash !== '#/welcome/login') {
+    window.location.hash = '#/welcome/login'
+  }
+}
 
 // 请求拦截器：自动注入 token
 api.interceptors.request.use((config) => {
@@ -14,6 +25,32 @@ api.interceptors.request.use((config) => {
   }
   return config
 })
+
+api.interceptors.response.use(
+  (response) => {
+    const payload = response.data
+    const isExpired =
+      payload?.code === 401 ||
+      payload?.message === 'auth expired' ||
+      payload?.message === 'AUTH_EXPIRED'
+
+    if (isExpired) {
+      clearAuthState()
+      redirectToLogin()
+      return Promise.reject(new Error('auth expired'))
+    }
+
+    return response
+  },
+  (error) => {
+    if (error.response?.status === 401) {
+      clearAuthState()
+      redirectToLogin()
+    }
+
+    return Promise.reject(error)
+  },
+)
 
 // ==================== 玩家模块 ====================
 
