@@ -343,6 +343,7 @@ function toggleMode() {
 const avatarInputRef = ref<HTMLInputElement | null>(null)
 const avatarFile = ref<File | null>(null)
 const avatarPreview = ref<string | null>(null)
+const isAvatarRequired = false
 
 const isMobile = ref(window.innerWidth <= 768)
 function handleResize() {
@@ -447,7 +448,7 @@ async function handleRegister() {
     ElMessage.warning('两次输入的密码不一致')
     return
   }
-  if (!avatarFile.value) {
+  if (isAvatarRequired && !avatarFile.value) {
     ElMessage.warning('请上传头像')
     return
   }
@@ -457,7 +458,9 @@ async function handleRegister() {
     const fd = new FormData()
     fd.append('playerName', registerData.username)
     fd.append('password', registerData.password)
-    fd.append('avatar', avatarFile.value)
+    if (avatarFile.value) {
+      fd.append('avatar', avatarFile.value)
+    }
 
     await playerApi.register(fd)
 
