@@ -26,8 +26,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
-</script>
+<script setup lang="ts"></script>
 
 <style scoped>
 .key-hint-wrapper {
@@ -70,10 +69,22 @@
   gap: 0;
 }
 
-.dir-pad .key:nth-child(1) { grid-column: 2 / 3; grid-row: 1 / 2; }
-.dir-pad .key:nth-child(2) { grid-column: 1 / 2; grid-row: 2 / 3; }
-.dir-pad .key:nth-child(3) { grid-column: 2 / 3; grid-row: 2 / 3; }
-.dir-pad .key:nth-child(4) { grid-column: 3 / 4; grid-row: 2 / 3; }
+.dir-pad .key:nth-child(1) {
+  grid-column: 2 / 3;
+  grid-row: 1 / 2;
+}
+.dir-pad .key:nth-child(2) {
+  grid-column: 1 / 2;
+  grid-row: 2 / 3;
+}
+.dir-pad .key:nth-child(3) {
+  grid-column: 2 / 3;
+  grid-row: 2 / 3;
+}
+.dir-pad .key:nth-child(4) {
+  grid-column: 3 / 4;
+  grid-row: 2 / 3;
+}
 
 .hint-row {
   display: flex;

@@ -2,20 +2,15 @@
   <div class="login-page">
     <!-- ========== Start Screen ========== -->
     <transition name="screen-fade" mode="out-in">
-      <div
-        v-if="showStartScreen"
-        key="start"
-        class="start-screen"
-        @click="enterWelcome"
-      >
+      <div v-if="showStartScreen" key="start" class="start-screen" @click="enterWelcome">
         <div class="start-content">
           <div class="start-text">
             <h1 class="start-title">Zuulventurers</h1>
             <p class="start-prompt">点击屏幕开始</p>
             <div class="click-indicator">
-              <div class="ripple"></div>
-              <div class="ripple"></div>
-              <div class="ripple"></div>
+              <div class="ripple" />
+              <div class="ripple" />
+              <div class="ripple" />
             </div>
           </div>
         </div>
@@ -61,12 +56,7 @@
         :class="{ 'register-mode': isRegisterMode }"
       >
         <!-- 关闭按钮 -->
-        <button
-          class="close-button"
-          :disabled="loading"
-          title="返回主页"
-          @click="backToWelcome"
-        >
+        <button class="close-button" :disabled="loading" title="返回主页" @click="backToWelcome">
           ×
         </button>
 
@@ -74,11 +64,7 @@
         <div class="auth-image">
           <!-- 登录模式：显示背景图 -->
           <template v-if="!isRegisterMode">
-            <img
-              src="/images/login-bg.png"
-              class="login-bg"
-              alt="login splash"
-            />
+            <img src="/images/login-bg.png" class="login-bg" alt="login splash" />
           </template>
           <!-- 注册模式：显示默认头像说明 -->
           <template v-else>
@@ -124,29 +110,17 @@
               </div>
 
               <div class="checkbox-group">
-                <input
-                  id="remember"
-                  v-model="loginData.rememberMe"
-                  type="checkbox"
-                />
+                <input id="remember" v-model="loginData.rememberMe" type="checkbox" />
                 <label for="remember">记住我</label>
                 <a class="forgot-password" href="#">忘记密码?</a>
               </div>
 
-              <button
-                class="submit-button"
-                type="submit"
-                :disabled="loading"
-              >
+              <button class="submit-button" type="submit" :disabled="loading">
                 {{ loading ? '登录中…' : '开始冒险吧！' }}
               </button>
             </form>
 
-            <button
-              class="switch-button"
-              :disabled="loading"
-              @click="toggleMode"
-            >
+            <button class="switch-button" :disabled="loading" @click="toggleMode">
               注册新账号
             </button>
           </div>
@@ -194,22 +168,12 @@
                 />
               </div>
 
-              <button
-                class="submit-button"
-                type="submit"
-                :disabled="loading"
-              >
+              <button class="submit-button" type="submit" :disabled="loading">
                 {{ loading ? '注册中…' : '立即注册' }}
               </button>
             </form>
 
-            <button
-              class="switch-button"
-              :disabled="loading"
-              @click="toggleMode"
-            >
-              返回登录
-            </button>
+            <button class="switch-button" :disabled="loading" @click="toggleMode">返回登录</button>
           </div>
         </transition>
       </div>
@@ -252,16 +216,16 @@ function backToWelcome() {
 
 function showGameIntro() {
   ElMessage.info(
-    '《Zuulventurers》是一款沉浸式2D密室冒险解谜游戏，玩家扮演一名迷失在古代遗迹中的探险者，需要穿越连绵相扣的房间，破解机关，收集线索，最终在"最终祭坛"揭开遗迹背后的秘密。'
+    '《Zuulventurers》是一款沉浸式2D密室冒险解谜游戏，玩家扮演一名迷失在古代遗迹中的探险者，需要穿越连绵相扣的房间，破解机关，收集线索，最终在"最终祭坛"揭开遗迹背后的秘密。',
   )
 }
 
 function addGlowEffect(event: MouseEvent) {
-  (event.target as HTMLElement).classList.add('glow-effect')
+  ;(event.target as HTMLElement).classList.add('glow-effect')
 }
 
 function removeGlowEffect(event: MouseEvent) {
-  (event.target as HTMLElement).classList.remove('glow-effect')
+  ;(event.target as HTMLElement).classList.remove('glow-effect')
 }
 
 // ==================== 认证逻辑 ====================
@@ -393,8 +357,10 @@ async function handleRegister() {
   font-size: 4rem;
   font-weight: 700;
   margin-bottom: 2rem;
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.5),
-    0 0 40px rgba(255, 255, 255, 0.3), 0 0 60px rgba(255, 255, 255, 0.2);
+  text-shadow:
+    0 0 20px rgba(255, 255, 255, 0.5),
+    0 0 40px rgba(255, 255, 255, 0.3),
+    0 0 60px rgba(255, 255, 255, 0.2);
   letter-spacing: 0.1em;
   animation: titleGlow 3s ease-in-out infinite alternate;
 }
@@ -426,28 +392,51 @@ async function handleRegister() {
   animation: rippleEffect 2s infinite;
 }
 
-.ripple:nth-child(2) { animation-delay: 0.5s; }
-.ripple:nth-child(3) { animation-delay: 1s; }
+.ripple:nth-child(2) {
+  animation-delay: 0.5s;
+}
+.ripple:nth-child(3) {
+  animation-delay: 1s;
+}
 
 @keyframes titleGlow {
   0% {
-    text-shadow: 0 0 20px rgba(255, 255, 255, 0.5),
-      0 0 40px rgba(255, 255, 255, 0.3), 0 0 60px rgba(255, 255, 255, 0.2);
+    text-shadow:
+      0 0 20px rgba(255, 255, 255, 0.5),
+      0 0 40px rgba(255, 255, 255, 0.3),
+      0 0 60px rgba(255, 255, 255, 0.2);
   }
   100% {
-    text-shadow: 0 0 30px rgba(255, 255, 255, 0.8),
-      0 0 60px rgba(255, 255, 255, 0.5), 0 0 90px rgba(255, 255, 255, 0.3);
+    text-shadow:
+      0 0 30px rgba(255, 255, 255, 0.8),
+      0 0 60px rgba(255, 255, 255, 0.5),
+      0 0 90px rgba(255, 255, 255, 0.3);
   }
 }
 
 @keyframes promptPulse {
-  0%, 100% { opacity: 0.7; transform: translateY(0); }
-  50%      { opacity: 1;   transform: translateY(-5px); }
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-5px);
+  }
 }
 
 @keyframes rippleEffect {
-  0%   { width: 20px; height: 20px; opacity: 1; }
-  100% { width: 60px; height: 60px; opacity: 0; }
+  0% {
+    width: 20px;
+    height: 20px;
+    opacity: 1;
+  }
+  100% {
+    width: 60px;
+    height: 60px;
+    opacity: 0;
+  }
 }
 
 /* ==================== Welcome Screen ==================== */
@@ -536,7 +525,9 @@ async function handleRegister() {
 .welcome-btn.glow-effect {
   border-color: #4a90e2;
   background: rgba(74, 144, 226, 0.3);
-  box-shadow: 0 0 20px rgba(74, 144, 226, 0.5), 0 10px 25px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 0 20px rgba(74, 144, 226, 0.5),
+    0 10px 25px rgba(0, 0, 0, 0.3);
   transform: translateY(-3px) scale(1.05);
 }
 
@@ -562,8 +553,14 @@ async function handleRegister() {
 }
 
 @keyframes slideIn {
-  from { opacity: 0; transform: translateY(50px) scale(0.9); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(50px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* ---- 关闭按钮 ---- */
@@ -740,7 +737,9 @@ async function handleRegister() {
   border-radius: 10px;
   font-size: 14px;
   outline: none;
-  transition: border-color 0.3s, box-shadow 0.3s;
+  transition:
+    border-color 0.3s,
+    box-shadow 0.3s;
   box-sizing: border-box;
 }
 
@@ -783,7 +782,9 @@ async function handleRegister() {
   color: #fff;
   background: linear-gradient(135deg, #4f46e5, #7c3aed);
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
   margin-bottom: 14px;
 }
 
@@ -822,7 +823,9 @@ async function handleRegister() {
 /* ==================== 过渡动画 ==================== */
 .screen-fade-enter-active,
 .screen-fade-leave-active {
-  transition: opacity 0.8s ease, transform 0.8s ease;
+  transition:
+    opacity 0.8s ease,
+    transform 0.8s ease;
 }
 .screen-fade-enter-from,
 .screen-fade-leave-to {
@@ -832,7 +835,9 @@ async function handleRegister() {
 
 .fade-slide-enter-active,
 .fade-slide-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
 }
 .fade-slide-enter-from {
   opacity: 0;
@@ -845,8 +850,12 @@ async function handleRegister() {
 
 /* ==================== 响应式 ==================== */
 @media (max-width: 768px) {
-  .start-title { font-size: 2.5rem; }
-  .start-prompt { font-size: 1.2rem; }
+  .start-title {
+    font-size: 2.5rem;
+  }
+  .start-prompt {
+    font-size: 1.2rem;
+  }
 
   .auth-container {
     width: 100%;

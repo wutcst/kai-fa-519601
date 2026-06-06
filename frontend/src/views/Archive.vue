@@ -220,8 +220,7 @@ onMounted(fetchSaves)
   position: relative;
   padding: 30px 30px 20px;
   text-align: center;
-  background:
-    linear-gradient(135deg, rgba(79, 70, 229, 0.22), rgba(14, 165, 233, 0.12));
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.22), rgba(14, 165, 233, 0.12));
   border-bottom: 1px solid rgba(148, 163, 184, 0.16);
 }
 
@@ -290,7 +289,11 @@ onMounted(fetchSaves)
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s, background 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s,
+    border-color 0.2s,
+    background 0.2s;
 }
 
 .action-btn:hover {

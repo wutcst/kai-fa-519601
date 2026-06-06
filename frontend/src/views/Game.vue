@@ -1,38 +1,116 @@
 <template>
   <div class="game-container" :style="backgroundStyle">
-    <div class="game-header">
-      <PlayerInfo />
-      <el-button type="primary" @click="openBackpack">背包 (B)</el-button>
-    </div>
-    <GameKeyHints />
-    <div class="game-scene">
-      <div class="nav-arrows">
-        <button class="arrow up" :disabled="!canMove('up') || isMoving" @click="move('up')">W</button>
-        <div class="arrow-row">
-          <button class="arrow left" :disabled="!canMove('left') || isMoving" @click="move('left')">A</button>
-          <button class="arrow down" :disabled="!canMove('down') || isMoving" @click="move('down')">S</button>
-          <button class="arrow right" :disabled="!canMove('right') || isMoving" @click="move('right')">D</button>
-        </div>
-      </div>
-      <div class="room-info">
-        <h3>{{ currentRoom.roomName }}</h3>
-        <p class="room-desc">{{ getRoomDescription(currentRoom.roomName) }}</p>
-        <div class="scene-objects">
-          <div class="scene-object crate" @click="openCrate">
-            <span class="object-icon">📦</span>
-            <span class="object-label">木箱</span>
+    <div class="game-layout">
+      <aside class="side-panel player-panel">
+        <div class="player-shell">
+          <div class="panel-heading">
+            <span class="panel-kicker">Player</span>
+            <h2 class="panel-title">冒险者状态</h2>
           </div>
-          <div
-            v-for="item in currentRoom.itemList"
-            :key="item.itemId"
-            class="scene-object room-item"
-            @click="pickItem(item.itemId)"
-          >
-            <span class="object-icon">{{ getItemIcon(item.itemName) }}</span>
-            <span class="object-label">{{ item.itemName }}</span>
+          <PlayerInfo class="player-card" />
+          <el-button class="backpack-trigger" type="primary" @click="openBackpack">
+            背包 (B)
+          </el-button>
+        </div>
+      </aside>
+
+      <main class="scene-panel">
+        <div class="scene-shell">
+          <div class="scene-meta">
+            <span class="scene-kicker">当前场景</span>
+            <span class="scene-room">{{ currentRoom.roomName || '正在探索未知区域' }}</span>
+          </div>
+          <GameKeyHints />
+          <div class="game-scene">
+            <div class="nav-arrows">
+              <button class="arrow up" :disabled="!canMove('up') || isMoving" @click="move('up')">
+                W
+              </button>
+              <div class="arrow-row">
+                <button
+                  class="arrow left"
+                  :disabled="!canMove('left') || isMoving"
+                  @click="move('left')"
+                >
+                  A
+                </button>
+                <button
+                  class="arrow down"
+                  :disabled="!canMove('down') || isMoving"
+                  @click="move('down')"
+                >
+                  S
+                </button>
+                <button
+                  class="arrow right"
+                  :disabled="!canMove('right') || isMoving"
+                  @click="move('right')"
+                >
+                  D
+                </button>
+              </div>
+            </div>
+            <div class="room-info">
+              <h3>{{ currentRoom.roomName }}</h3>
+              <p class="room-desc">
+                {{ getRoomDescription(currentRoom.roomName) }}
+              </p>
+              <div class="scene-objects">
+                <div class="scene-object crate" @click="openCrate">
+                  <span class="object-icon">📦</span>
+                  <span class="object-label">木箱</span>
+                </div>
+                <div
+                  v-for="item in currentRoom.itemList"
+                  :key="item.itemId"
+                  class="scene-object room-item"
+                  @click="pickItem(item.itemId)"
+                >
+                  <span class="object-icon">{{ getItemIcon(item.itemName) }}</span>
+                  <span class="object-label">{{ item.itemName }}</span>
+                </div>
+              </div>
+              <div class="room-item-panel">
+                <div class="room-item-panel-header">
+                  <span>房间物品</span>
+                  <span class="room-item-count">{{ currentRoom.itemList.length }} 件</span>
+                </div>
+                <div v-if="currentRoom.itemList.length === 0" class="room-item-empty">
+                  当前房间暂无可拾取物品
+                </div>
+                <ul v-else class="room-item-list">
+                  <li
+                    v-for="item in currentRoom.itemList"
+                    :key="`room-item-${item.itemId}`"
+                    class="room-item-row"
+                  >
+                    <div class="room-item-summary">
+                      <span class="room-item-name">{{ item.itemName }}</span>
+                      <div class="room-item-stats">
+                        <span class="room-item-meta">重量 {{ item.itemSize }}</span>
+                        <span class="room-item-meta">价值 {{ item.itemValue }}</span>
+                      </div>
+                    </div>
+                    <el-button
+                      class="room-item-pick"
+                      size="small"
+                      type="primary"
+                      :disabled="backpackCount >= backpackSize"
+                      @click="pickItem(item.itemId)"
+                    >
+                      拾取
+                    </el-button>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </main>
+
+      <aside class="side-panel leaderboard-panel">
+        <LeaderBoard />
+      </aside>
     </div>
 
     <!-- 木箱弹窗 -->
@@ -53,25 +131,34 @@
             <span class="object-icon">{{ getItemIcon(item.itemName) }}</span>
             <div class="crate-item-info">
               <span class="crate-item-name">{{ item.itemName }}</span>
-              <span class="crate-item-meta">重量: {{ item.itemSize }} | 价值: {{ item.itemValue }}</span>
+              <span class="crate-item-meta"
+                >重量: {{ item.itemSize }} | 价值: {{ item.itemValue }}</span
+              >
             </div>
           </div>
           <div v-if="currentRoom.itemList.length === 0" class="crate-empty">箱子里空空如也…</div>
         </div>
         <div class="crate-footer">
-          <p v-if="backpackCount >= backpackSize" class="inventory-full-warning">背包已满！请先清理背包空间。</p>
-          <el-button type="primary" :disabled="backpackCount >= backpackSize || currentRoom.itemList.length === 0" @click="takeAllItems">
+          <p v-if="backpackCount >= backpackSize" class="inventory-full-warning">
+            背包已满！请先清理背包空间。
+          </p>
+          <el-button
+            type="primary"
+            :disabled="backpackCount >= backpackSize || currentRoom.itemList.length === 0"
+            @click="takeAllItems"
+          >
             全部拾取
           </el-button>
         </div>
       </div>
     </div>
-    <LeaderBoard />
     <Backpack ref="backpackRef" />
 
     <!-- 操作消息提示 -->
     <transition name="msg-fade">
-      <div v-if="actionMessage" class="action-message">{{ actionMessage }}</div>
+      <div v-if="actionMessage" class="action-message">
+        {{ actionMessage }}
+      </div>
     </transition>
   </div>
 </template>
@@ -161,7 +248,7 @@ const iconMap: Record<string, string> = {
   '金币（堆）': '💰',
   宝石: '💎',
   魔法饼干: '🍪',
-  体力药水: '⚡'
+  体力药水: '⚡',
 }
 
 function getItemIcon(name: string): string {
@@ -198,6 +285,10 @@ function getRoomDescription(name: string): string {
   return '🔍 一个充满未知的房间，等待着你去探索其中的秘密。'
 }
 
+function isTeleportRoom(name: string): boolean {
+  return name.includes('传送')
+}
+
 const roomBackgroundMap: Record<string, string> = {
   主城: 'linear-gradient(135deg, #f5d78c 0%, #e8b86d 30%, #c9a05a 60%, #8b6914 100%)',
   森林: 'linear-gradient(180deg, #2d5a27 0%, #1a3a15 40%, #0d2608 80%, #1a0f00 100%)',
@@ -229,13 +320,18 @@ const backgroundStyle = computed(() => {
   return { background: '#1a1a2e' }
 })
 
-async function loadRoom() {
+async function loadRoom(autoTeleport = false) {
   const playerId = Number(localStorage.getItem('playerId'))
   const infoRes = await playerApi.getInfo(playerId)
   if (infoRes.data.code === 200) {
     const roomId = infoRes.data.data.playerRoomId
     const roomRes = await roomApi.getInfo(roomId)
-    if (roomRes.data.code === 200) currentRoom.value = normalizeRoomData(roomRes.data.data)
+    if (roomRes.data.code === 200) {
+      currentRoom.value = normalizeRoomData(roomRes.data.data)
+      if (autoTeleport) {
+        checkTeleport()
+      }
+    }
   }
 }
 
@@ -255,7 +351,9 @@ async function loadBackpack() {
 async function move(direction: Direction) {
   if (!canMove(direction)) {
     actionMessage.value = '这个方向没有门'
-    setTimeout(() => { actionMessage.value = '' }, 2000)
+    setTimeout(() => {
+      actionMessage.value = ''
+    }, 2000)
     return
   }
 
@@ -265,16 +363,19 @@ async function move(direction: Direction) {
   try {
     const res = await playerApi.move(playerId, direction)
     if (res.data.code === 200) {
-      await loadRoom()
-      actionMessage.value = `成功移动到 ${currentRoom.value.roomName}`
-      checkTeleport()
+      await loadRoom(true)
+      if (!isTeleportRoom(currentRoom.value.roomName)) {
+        actionMessage.value = `成功移动到 ${currentRoom.value.roomName}`
+      }
     } else {
       actionMessage.value = '这个方向没有门'
     }
   } catch {
     actionMessage.value = '这个方向没有门'
   }
-  setTimeout(() => { actionMessage.value = '' }, 2000)
+  setTimeout(() => {
+    actionMessage.value = ''
+  }, 2000)
   isMoving.value = false
 }
 
@@ -285,16 +386,19 @@ async function back() {
   try {
     const res = await playerApi.back(playerId)
     if (res.data.code === 200) {
-      await loadRoom()
-      actionMessage.value = `你回到了 ${currentRoom.value.roomName}`
-      checkTeleport()
+      await loadRoom(true)
+      if (!isTeleportRoom(currentRoom.value.roomName)) {
+        actionMessage.value = `你回到了 ${currentRoom.value.roomName}`
+      }
     } else {
       actionMessage.value = '已在最初房间，无法再后退'
     }
   } catch {
     actionMessage.value = '已在最初房间，无法再后退'
   }
-  setTimeout(() => { actionMessage.value = '' }, 2000)
+  setTimeout(() => {
+    actionMessage.value = ''
+  }, 2000)
   isMoving.value = false
 }
 
@@ -305,19 +409,22 @@ async function goHome() {
   try {
     const res = await playerApi.home(playerId)
     if (res.data.code === 200) {
-      await loadRoom()
-      actionMessage.value = `你已回到 ${currentRoom.value.roomName}`
-      checkTeleport()
+      await loadRoom(true)
+      if (!isTeleportRoom(currentRoom.value.roomName)) {
+        actionMessage.value = `你已回到 ${currentRoom.value.roomName}`
+      }
     }
   } catch {
     actionMessage.value = '回城失败，请重试'
   }
-  setTimeout(() => { actionMessage.value = '' }, 2000)
+  setTimeout(() => {
+    actionMessage.value = ''
+  }, 2000)
   isMoving.value = false
 }
 
 function checkTeleport() {
-  if (currentRoom.value.roomName.includes('传送')) {
+  if (isTeleportRoom(currentRoom.value.roomName)) {
     actionMessage.value = '你已进入传送房间，即将传送…'
     setTimeout(() => handleTeleport(), 1000)
   }
@@ -349,13 +456,17 @@ async function doTeleport() {
   try {
     const res = await playerApi.trans(playerId)
     if (res.data.code === 200) {
-      await loadRoom()
-      actionMessage.value = `已传送到 ${currentRoom.value.roomName}`
+      await loadRoom(true)
+      if (!isTeleportRoom(currentRoom.value.roomName)) {
+        actionMessage.value = `已传送到 ${currentRoom.value.roomName}`
+      }
     }
   } catch {
     actionMessage.value = '传送失败，请稍后重试'
   }
-  setTimeout(() => { actionMessage.value = '' }, 2000)
+  setTimeout(() => {
+    actionMessage.value = ''
+  }, 2000)
   isMoving.value = false
 }
 
@@ -363,7 +474,9 @@ async function pickItem(itemId: number) {
   const playerId = Number(localStorage.getItem('playerId'))
   if (backpackCount.value >= backpackSize.value) {
     actionMessage.value = '背包已满，无法拾取'
-    setTimeout(() => { actionMessage.value = '' }, 2000)
+    setTimeout(() => {
+      actionMessage.value = ''
+    }, 2000)
     return
   }
   try {
@@ -374,7 +487,9 @@ async function pickItem(itemId: number) {
   } catch {
     actionMessage.value = '拾取失败，请重试'
   }
-  setTimeout(() => { actionMessage.value = '' }, 2000)
+  setTimeout(() => {
+    actionMessage.value = ''
+  }, 2000)
 }
 
 function openBackpack() {
@@ -388,7 +503,9 @@ function openCrate() {
 async function pickItemFromCrate(itemId: number) {
   if (backpackCount.value >= backpackSize.value) {
     actionMessage.value = '背包已满，无法拾取'
-    setTimeout(() => { actionMessage.value = '' }, 2000)
+    setTimeout(() => {
+      actionMessage.value = ''
+    }, 2000)
     return
   }
   const playerId = Number(localStorage.getItem('playerId'))
@@ -401,7 +518,9 @@ async function pickItemFromCrate(itemId: number) {
   } catch {
     actionMessage.value = '拾取失败，请重试'
   }
-  setTimeout(() => { actionMessage.value = '' }, 2000)
+  setTimeout(() => {
+    actionMessage.value = ''
+  }, 2000)
 }
 
 async function takeAllItems() {
@@ -421,7 +540,9 @@ async function takeAllItems() {
   await loadBackpack()
   actionMessage.value = `共拾取 ${picked} 件物品`
   if (currentRoom.value.itemList.length === 0) showCrate.value = false
-  setTimeout(() => { actionMessage.value = '' }, 2000)
+  setTimeout(() => {
+    actionMessage.value = ''
+  }, 2000)
 }
 
 function handleKeydown(e: KeyboardEvent) {
@@ -440,11 +561,13 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 onMounted(() => {
-  loadRoom()
+  loadRoom(true)
   loadBackpack()
   window.addEventListener('keydown', handleKeydown)
   const mq = window.matchMedia('(max-width: 768px)')
-  const onMediaChange = (e: MediaQueryListEvent) => { isMobile.value = e.matches }
+  const onMediaChange = (e: MediaQueryListEvent) => {
+    isMobile.value = e.matches
+  }
   mq.addEventListener('change', onMediaChange)
   onUnmounted(() => mq.removeEventListener('change', onMediaChange))
 })
@@ -454,25 +577,112 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
 <style scoped>
 .game-container {
   width: 100%;
-  height: 100%;
+  min-height: 100%;
   display: flex;
-  flex-direction: column;
   transition: background 0.6s ease;
   color: #fff;
-  padding: 16px;
+  padding: 24px;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
 }
 
-.game-header {
+.game-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr) minmax(220px, 260px);
+  gap: 24px;
+  min-height: 0;
+}
+
+.side-panel,
+.scene-panel {
+  min-height: 0;
+}
+
+.leaderboard-panel {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+  height: calc(100vh - 48px);
+}
+
+.player-shell,
+.scene-shell {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    linear-gradient(180deg, rgba(5, 12, 34, 0.78), rgba(15, 23, 42, 0.62)),
+    radial-gradient(circle at top, rgba(59, 130, 246, 0.16), transparent 48%);
+  backdrop-filter: blur(18px);
+  box-shadow:
+    0 24px 60px rgba(15, 23, 42, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.player-shell {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 18px;
+  padding: 22px;
+}
+
+.panel-heading,
+.scene-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.panel-kicker,
+.scene-kicker {
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(191, 219, 254, 0.76);
+}
+
+.panel-title,
+.scene-room {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.player-card {
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.38);
+  box-shadow: none;
+}
+
+.backpack-trigger {
+  margin-top: auto;
+  width: 100%;
+  height: 44px;
+}
+
+.scene-shell {
+  padding: 24px 28px 28px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .game-scene {
   flex: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 40px;
+  min-height: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .nav-arrows {
@@ -504,12 +714,24 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
 }
 
 .room-info {
-  max-width: 400px;
+  max-width: 420px;
+  padding: 22px 24px;
+  border-radius: 22px;
+  background: rgba(15, 23, 42, 0.34);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.room-info h3 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  color: #f8fafc;
 }
 
 .room-desc {
   font-size: 13px;
-  color: #aaa;
+  color: rgba(226, 232, 240, 0.78);
   line-height: 1.6;
   margin: 8px 0 16px;
   font-style: italic;
@@ -552,6 +774,93 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 16px;
+}
+
+.room-item-panel {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.room-item-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.room-item-count {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(79, 70, 229, 0.18);
+  color: #c4b5fd;
+  font-size: 12px;
+}
+
+.room-item-empty {
+  padding: 14px 12px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.28);
+  color: rgba(226, 232, 240, 0.66);
+  font-size: 13px;
+}
+
+.room-item-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.room-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.26);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.room-item-summary {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.room-item-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.room-item-name {
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.room-item-meta {
+  font-size: 12px;
+  color: rgba(191, 219, 254, 0.8);
+  white-space: nowrap;
+}
+
+.room-item-pick {
+  flex-shrink: 0;
 }
 
 .scene-object {
@@ -700,15 +1009,42 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
   margin: 0;
 }
 
+@media (max-width: 1120px) {
+  .game-layout {
+    grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  }
+
+  .leaderboard-panel {
+    position: static;
+    height: auto;
+    grid-column: 1 / -1;
+  }
+}
+
 /* 移动端适配 */
 @media (max-width: 768px) {
   .game-container {
-    padding: 8px;
+    padding: 10px;
+  }
+
+  .game-layout {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .player-shell,
+  .scene-shell {
+    border-radius: 22px;
+  }
+
+  .scene-shell {
+    padding: 18px;
   }
 
   .game-scene {
     flex-direction: column;
-    gap: 16px;
+    justify-content: flex-start;
+    gap: 20px;
   }
 
   .nav-arrows {
@@ -729,10 +1065,19 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
   .room-info {
     max-width: 100%;
     text-align: center;
+    padding: 18px;
   }
 
   .scene-objects {
     justify-content: center;
+  }
+
+  .room-item-row {
+    align-items: flex-start;
+  }
+
+  .room-item-pick {
+    width: 100%;
   }
 
   .crate-modal {

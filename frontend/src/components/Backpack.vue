@@ -8,9 +8,7 @@
   >
     <!-- 背包容量信息 -->
     <div class="backpack-header">
-      <span class="capacity">
-        容量：{{ items.length }} / {{ backpackSize }}
-      </span>
+      <span class="capacity"> 容量：{{ items.length }} / {{ backpackSize }} </span>
     </div>
 
     <!-- 物品列表 -->
@@ -32,12 +30,7 @@
           >
             使用
           </el-button>
-          <el-button
-            size="small"
-            type="danger"
-            :disabled="loading"
-            @click="dropItem(item.itemId)"
-          >
+          <el-button size="small" type="danger" :disabled="loading" @click="dropItem(item.itemId)">
             丢弃
           </el-button>
         </div>

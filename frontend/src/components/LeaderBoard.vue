@@ -21,9 +21,7 @@ let timer: ReturnType<typeof setInterval>
 async function refresh() {
   const res = await playerApi.getList()
   if (res.data.code === 200) {
-    players.value = (res.data.data || []).sort(
-      (a: any, b: any) => b.playerScore - a.playerScore,
-    )
+    players.value = (res.data.data || []).sort((a: any, b: any) => b.playerScore - a.playerScore)
   }
 }
 
@@ -36,14 +34,16 @@ onUnmounted(() => clearInterval(timer))
 
 <style scoped>
 .leaderboard {
-  position: fixed;
-  right: 16px;
-  top: 16px;
-  width: 200px;
-  padding: 14px 12px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 18px 16px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
   background: linear-gradient(135deg, rgba(30, 20, 60, 0.75), rgba(15, 10, 40, 0.8));
   backdrop-filter: blur(12px);
-  border-radius: 12px;
+  border-radius: 28px;
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
@@ -70,6 +70,8 @@ ul {
   list-style: none;
   padding: 0;
   margin: 0;
+  flex: 1;
+  overflow-y: auto;
 }
 
 li {
@@ -83,11 +85,21 @@ li {
   animation: fadeIn 0.4s ease both;
 }
 
-li:nth-child(1) { animation-delay: 0.05s; }
-li:nth-child(2) { animation-delay: 0.1s; }
-li:nth-child(3) { animation-delay: 0.15s; }
-li:nth-child(4) { animation-delay: 0.2s; }
-li:nth-child(5) { animation-delay: 0.25s; }
+li:nth-child(1) {
+  animation-delay: 0.05s;
+}
+li:nth-child(2) {
+  animation-delay: 0.1s;
+}
+li:nth-child(3) {
+  animation-delay: 0.15s;
+}
+li:nth-child(4) {
+  animation-delay: 0.2s;
+}
+li:nth-child(5) {
+  animation-delay: 0.25s;
+}
 
 li:hover {
   background: rgba(255, 255, 255, 0.06);
@@ -134,7 +146,7 @@ li:nth-child(3) .rank {
   color: #cd7f32;
   text-shadow: 0 0 6px rgba(205, 127, 50, 0.5);
 }
-li:nth-child(n+4) .rank {
+li:nth-child(n + 4) .rank {
   color: rgba(255, 255, 255, 0.4);
 }
 
@@ -164,6 +176,12 @@ li:nth-child(n+4) .rank {
   to {
     opacity: 1;
     transform: translateX(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .leaderboard {
+    border-radius: 22px;
   }
 }
 </style>
