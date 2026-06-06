@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // 统一 axios 实例
 const api = axios.create({
-  baseURL: '',
+  baseURL: '/api',
   withCredentials: true,
 })
 
