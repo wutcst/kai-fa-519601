@@ -36,14 +36,16 @@ onUnmounted(() => clearInterval(timer))
 
 <style scoped>
 .leaderboard {
-  position: fixed;
-  right: 16px;
-  top: 16px;
-  width: 200px;
-  padding: 14px 12px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 18px 16px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
   background: linear-gradient(135deg, rgba(30, 20, 60, 0.75), rgba(15, 10, 40, 0.8));
   backdrop-filter: blur(12px);
-  border-radius: 12px;
+  border-radius: 28px;
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
@@ -70,6 +72,8 @@ ul {
   list-style: none;
   padding: 0;
   margin: 0;
+  flex: 1;
+  overflow-y: auto;
 }
 
 li {
@@ -164,6 +168,12 @@ li:nth-child(n+4) .rank {
   to {
     opacity: 1;
     transform: translateX(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .leaderboard {
+    border-radius: 22px;
   }
 }
 </style>

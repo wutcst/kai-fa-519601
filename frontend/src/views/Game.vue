@@ -1,38 +1,61 @@
 <template>
   <div class="game-container" :style="backgroundStyle">
-    <div class="game-header">
-      <PlayerInfo />
-      <el-button type="primary" @click="openBackpack">背包 (B)</el-button>
-    </div>
-    <GameKeyHints />
-    <div class="game-scene">
-      <div class="nav-arrows">
-        <button class="arrow up" :disabled="!canMove('up') || isMoving" @click="move('up')">W</button>
-        <div class="arrow-row">
-          <button class="arrow left" :disabled="!canMove('left') || isMoving" @click="move('left')">A</button>
-          <button class="arrow down" :disabled="!canMove('down') || isMoving" @click="move('down')">S</button>
-          <button class="arrow right" :disabled="!canMove('right') || isMoving" @click="move('right')">D</button>
-        </div>
-      </div>
-      <div class="room-info">
-        <h3>{{ currentRoom.roomName }}</h3>
-        <p class="room-desc">{{ getRoomDescription(currentRoom.roomName) }}</p>
-        <div class="scene-objects">
-          <div class="scene-object crate" @click="openCrate">
-            <span class="object-icon">📦</span>
-            <span class="object-label">木箱</span>
+    <div class="game-layout">
+      <aside class="side-panel player-panel">
+        <div class="player-shell">
+          <div class="panel-heading">
+            <span class="panel-kicker">Player</span>
+            <h2 class="panel-title">冒险者状态</h2>
           </div>
-          <div
-            v-for="item in currentRoom.itemList"
-            :key="item.itemId"
-            class="scene-object room-item"
-            @click="pickItem(item.itemId)"
-          >
-            <span class="object-icon">{{ getItemIcon(item.itemName) }}</span>
-            <span class="object-label">{{ item.itemName }}</span>
+          <PlayerInfo class="player-card" />
+          <el-button class="backpack-trigger" type="primary" @click="openBackpack">
+            背包 (B)
+          </el-button>
+        </div>
+      </aside>
+
+      <main class="scene-panel">
+        <div class="scene-shell">
+          <div class="scene-meta">
+            <span class="scene-kicker">当前场景</span>
+            <span class="scene-room">{{ currentRoom.roomName || '正在探索未知区域' }}</span>
+          </div>
+          <GameKeyHints />
+          <div class="game-scene">
+            <div class="nav-arrows">
+              <button class="arrow up" :disabled="!canMove('up') || isMoving" @click="move('up')">W</button>
+              <div class="arrow-row">
+                <button class="arrow left" :disabled="!canMove('left') || isMoving" @click="move('left')">A</button>
+                <button class="arrow down" :disabled="!canMove('down') || isMoving" @click="move('down')">S</button>
+                <button class="arrow right" :disabled="!canMove('right') || isMoving" @click="move('right')">D</button>
+              </div>
+            </div>
+            <div class="room-info">
+              <h3>{{ currentRoom.roomName }}</h3>
+              <p class="room-desc">{{ getRoomDescription(currentRoom.roomName) }}</p>
+              <div class="scene-objects">
+                <div class="scene-object crate" @click="openCrate">
+                  <span class="object-icon">📦</span>
+                  <span class="object-label">木箱</span>
+                </div>
+                <div
+                  v-for="item in currentRoom.itemList"
+                  :key="item.itemId"
+                  class="scene-object room-item"
+                  @click="pickItem(item.itemId)"
+                >
+                  <span class="object-icon">{{ getItemIcon(item.itemName) }}</span>
+                  <span class="object-label">{{ item.itemName }}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </main>
+
+      <aside class="side-panel leaderboard-panel">
+        <LeaderBoard />
+      </aside>
     </div>
 
     <!-- 木箱弹窗 -->
@@ -66,7 +89,6 @@
         </div>
       </div>
     </div>
-    <LeaderBoard />
     <Backpack ref="backpackRef" />
 
     <!-- 操作消息提示 -->
@@ -454,25 +476,105 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
 <style scoped>
 .game-container {
   width: 100%;
-  height: 100%;
+  min-height: 100%;
   display: flex;
-  flex-direction: column;
   transition: background 0.6s ease;
   color: #fff;
-  padding: 16px;
+  padding: 24px;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
 }
 
-.game-header {
+.game-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr) minmax(220px, 260px);
+  gap: 24px;
+  min-height: 0;
+}
+
+.side-panel,
+.scene-panel {
+  min-height: 0;
+}
+
+.player-shell,
+.scene-shell {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    linear-gradient(180deg, rgba(5, 12, 34, 0.78), rgba(15, 23, 42, 0.62)),
+    radial-gradient(circle at top, rgba(59, 130, 246, 0.16), transparent 48%);
+  backdrop-filter: blur(18px);
+  box-shadow:
+    0 24px 60px rgba(15, 23, 42, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.player-shell {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 18px;
+  padding: 22px;
+}
+
+.panel-heading,
+.scene-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.panel-kicker,
+.scene-kicker {
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(191, 219, 254, 0.76);
+}
+
+.panel-title,
+.scene-room {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.player-card {
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.38);
+  box-shadow: none;
+}
+
+.backpack-trigger {
+  margin-top: auto;
+  width: 100%;
+  height: 44px;
+}
+
+.scene-shell {
+  padding: 24px 28px 28px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .game-scene {
   flex: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 40px;
+  min-height: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .nav-arrows {
@@ -504,12 +606,24 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
 }
 
 .room-info {
-  max-width: 400px;
+  max-width: 420px;
+  padding: 22px 24px;
+  border-radius: 22px;
+  background: rgba(15, 23, 42, 0.34);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.room-info h3 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  color: #f8fafc;
 }
 
 .room-desc {
   font-size: 13px;
-  color: #aaa;
+  color: rgba(226, 232, 240, 0.78);
   line-height: 1.6;
   margin: 8px 0 16px;
   font-style: italic;
@@ -700,15 +814,40 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
   margin: 0;
 }
 
+@media (max-width: 1120px) {
+  .game-layout {
+    grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  }
+
+  .leaderboard-panel {
+    grid-column: 1 / -1;
+  }
+}
+
 /* 移动端适配 */
 @media (max-width: 768px) {
   .game-container {
-    padding: 8px;
+    padding: 10px;
+  }
+
+  .game-layout {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .player-shell,
+  .scene-shell {
+    border-radius: 22px;
+  }
+
+  .scene-shell {
+    padding: 18px;
   }
 
   .game-scene {
     flex-direction: column;
-    gap: 16px;
+    justify-content: flex-start;
+    gap: 20px;
   }
 
   .nav-arrows {
@@ -729,6 +868,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
   .room-info {
     max-width: 100%;
     text-align: center;
+    padding: 18px;
   }
 
   .scene-objects {
