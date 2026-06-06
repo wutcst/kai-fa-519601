@@ -149,8 +149,7 @@ async function deleteSave(saveId: number) {
     const res = await gameApi.delete(saveId)
     if (res.data.code === 200) {
       ElMessage.success('删除成功')
-      saves.value = saves.value.filter((save) => save.saveId !== saveId)
-      selectedSave.value = saves.value.length > 0 ? 0 : null
+      await fetchSaves()
     } else {
       ElMessage.error(res.data.message || '删除失败')
     }
