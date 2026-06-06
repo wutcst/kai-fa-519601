@@ -191,11 +191,15 @@ onMounted(fetchSaves)
 .archive-panel {
   width: 100%;
   max-width: 860px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background:
+    linear-gradient(160deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.82)),
+    radial-gradient(circle at top, rgba(59, 130, 246, 0.18), transparent 50%);
+  backdrop-filter: blur(22px);
+  border-radius: 24px;
+  box-shadow:
+    0 24px 60px rgba(15, 23, 42, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.18);
   overflow: hidden;
   animation: slideInUp 0.6s ease-out;
 }
@@ -216,30 +220,37 @@ onMounted(fetchSaves)
   position: relative;
   padding: 30px 30px 20px;
   text-align: center;
-  background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(124, 58, 237, 0.1));
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background:
+    linear-gradient(135deg, rgba(79, 70, 229, 0.22), rgba(14, 165, 233, 0.12));
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
 }
 
 .close-btn {
   position: absolute;
   top: 20px;
   right: 20px;
+  width: 40px;
+  height: 40px;
   border: none;
-  background: transparent;
-  color: #6b7280;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.42);
+  color: #cbd5e1;
   font-size: 24px;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .close-btn:hover {
-  color: #1f2937;
+  color: #fff;
+  background: rgba(79, 70, 229, 0.35);
+  transform: translateY(-1px);
 }
 
 .panel-title {
   margin: 0 0 8px;
   font-size: 28px;
   font-weight: 700;
-  color: #1f2937;
+  color: #f8fafc;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -253,14 +264,15 @@ onMounted(fetchSaves)
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #4f46e5;
-  color: #fff;
+  background: linear-gradient(135deg, #4338ca, #0ea5e9);
+  color: #e0f2fe;
   font-size: 16px;
+  box-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
 }
 
 .panel-subtitle {
   margin: 0;
-  color: #6b7280;
+  color: rgba(226, 232, 240, 0.8);
   font-size: 16px;
 }
 
@@ -268,18 +280,17 @@ onMounted(fetchSaves)
   display: flex;
   gap: 12px;
   padding: 20px 30px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
 }
 
 .action-btn {
   flex: 1;
-  padding: 10px 16px;
-  border: none;
-  border-radius: 10px;
+  padding: 12px 16px;
+  border-radius: 12px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s, background 0.2s;
 }
 
 .action-btn:hover {
@@ -288,21 +299,23 @@ onMounted(fetchSaves)
 
 .new-btn {
   background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  border: 1px solid rgba(129, 140, 248, 0.28);
   color: #fff;
 }
 
 .new-btn:hover {
-  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
+  box-shadow: 0 10px 30px rgba(79, 70, 229, 0.38);
 }
 
 .refresh-btn {
-  background: rgba(107, 114, 128, 0.1);
-  color: #374151;
-  border: 1px solid rgba(107, 114, 128, 0.2);
+  background: rgba(15, 23, 42, 0.4);
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.18);
 }
 
 .refresh-btn:hover {
-  background: rgba(107, 114, 128, 0.2);
+  background: rgba(30, 41, 59, 0.72);
+  border-color: rgba(129, 140, 248, 0.3);
 }
 
 .save-table-wrapper {
@@ -313,14 +326,56 @@ onMounted(fetchSaves)
   width: 100%;
   border-radius: 14px;
   overflow: hidden;
+  background: transparent;
+  color: #e2e8f0;
+  --el-table-border-color: rgba(148, 163, 184, 0.14);
+  --el-table-row-hover-bg-color: rgba(79, 70, 229, 0.12);
+  --el-table-header-bg-color: rgba(15, 23, 42, 0.9);
+  --el-table-tr-bg-color: transparent;
+  --el-table-bg-color: transparent;
+  --el-fill-color-blank: transparent;
+  --el-text-color-regular: #e2e8f0;
+  --el-text-color-secondary: rgba(226, 232, 240, 0.72);
 }
 
 :deep(.save-table .el-table__row) {
   cursor: pointer;
 }
 
+:deep(.save-table .el-table__inner-wrapper::before) {
+  display: none;
+}
+
+:deep(.save-table th.el-table__cell) {
+  background: rgba(15, 23, 42, 0.9) !important;
+  color: #cbd5e1;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  font-weight: 600;
+}
+
+:deep(.save-table td.el-table__cell) {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+}
+
 :deep(.save-table .el-table__row:hover > td) {
-  background: rgba(79, 70, 229, 0.06) !important;
+  background: rgba(79, 70, 229, 0.12) !important;
+}
+
+:deep(.save-table .el-table__empty-block) {
+  background: transparent;
+}
+
+:deep(.save-table .el-table__empty-text) {
+  color: rgba(226, 232, 240, 0.72);
+}
+
+:deep(.table-actions .el-button--primary) {
+  color: #93c5fd;
+}
+
+:deep(.table-actions .el-button--danger) {
+  color: #fda4af;
 }
 
 .table-actions {
@@ -332,13 +387,14 @@ onMounted(fetchSaves)
 .panel-footer {
   padding: 15px 30px;
   text-align: center;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
-  background: rgba(249, 250, 251, 0.5);
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(15, 23, 42, 0.4);
 }
 
 .footer-text {
   font-size: 12px;
-  color: #9ca3af;
+  letter-spacing: 0.12em;
+  color: rgba(148, 163, 184, 0.86);
 }
 
 @media (max-width: 768px) {
