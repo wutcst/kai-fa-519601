@@ -253,6 +253,10 @@ function getRoomDescription(name: string): string {
   return '🔍 一个充满未知的房间，等待着你去探索其中的秘密。'
 }
 
+function isTeleportRoom(name: string): boolean {
+  return name.includes('传送')
+}
+
 const roomBackgroundMap: Record<string, string> = {
   主城: 'linear-gradient(135deg, #f5d78c 0%, #e8b86d 30%, #c9a05a 60%, #8b6914 100%)',
   森林: 'linear-gradient(180deg, #2d5a27 0%, #1a3a15 40%, #0d2608 80%, #1a0f00 100%)',
@@ -284,13 +288,18 @@ const backgroundStyle = computed(() => {
   return { background: '#1a1a2e' }
 })
 
-async function loadRoom() {
+async function loadRoom(autoTeleport = false) {
   const playerId = Number(localStorage.getItem('playerId'))
   const infoRes = await playerApi.getInfo(playerId)
   if (infoRes.data.code === 200) {
     const roomId = infoRes.data.data.playerRoomId
     const roomRes = await roomApi.getInfo(roomId)
-    if (roomRes.data.code === 200) currentRoom.value = normalizeRoomData(roomRes.data.data)
+    if (roomRes.data.code === 200) {
+      currentRoom.value = normalizeRoomData(roomRes.data.data)
+      if (autoTeleport) {
+        checkTeleport()
+      }
+    }
   }
 }
 
@@ -320,9 +329,10 @@ async function move(direction: Direction) {
   try {
     const res = await playerApi.move(playerId, direction)
     if (res.data.code === 200) {
-      await loadRoom()
-      actionMessage.value = `成功移动到 ${currentRoom.value.roomName}`
-      checkTeleport()
+      await loadRoom(true)
+      if (!isTeleportRoom(currentRoom.value.roomName)) {
+        actionMessage.value = `成功移动到 ${currentRoom.value.roomName}`
+      }
     } else {
       actionMessage.value = '这个方向没有门'
     }
@@ -340,9 +350,10 @@ async function back() {
   try {
     const res = await playerApi.back(playerId)
     if (res.data.code === 200) {
-      await loadRoom()
-      actionMessage.value = `你回到了 ${currentRoom.value.roomName}`
-      checkTeleport()
+      await loadRoom(true)
+      if (!isTeleportRoom(currentRoom.value.roomName)) {
+        actionMessage.value = `你回到了 ${currentRoom.value.roomName}`
+      }
     } else {
       actionMessage.value = '已在最初房间，无法再后退'
     }
@@ -360,9 +371,10 @@ async function goHome() {
   try {
     const res = await playerApi.home(playerId)
     if (res.data.code === 200) {
-      await loadRoom()
-      actionMessage.value = `你已回到 ${currentRoom.value.roomName}`
-      checkTeleport()
+      await loadRoom(true)
+      if (!isTeleportRoom(currentRoom.value.roomName)) {
+        actionMessage.value = `你已回到 ${currentRoom.value.roomName}`
+      }
     }
   } catch {
     actionMessage.value = '回城失败，请重试'
@@ -372,7 +384,7 @@ async function goHome() {
 }
 
 function checkTeleport() {
-  if (currentRoom.value.roomName.includes('传送')) {
+  if (isTeleportRoom(currentRoom.value.roomName)) {
     actionMessage.value = '你已进入传送房间，即将传送…'
     setTimeout(() => handleTeleport(), 1000)
   }
@@ -404,8 +416,10 @@ async function doTeleport() {
   try {
     const res = await playerApi.trans(playerId)
     if (res.data.code === 200) {
-      await loadRoom()
-      actionMessage.value = `已传送到 ${currentRoom.value.roomName}`
+      await loadRoom(true)
+      if (!isTeleportRoom(currentRoom.value.roomName)) {
+        actionMessage.value = `已传送到 ${currentRoom.value.roomName}`
+      }
     }
   } catch {
     actionMessage.value = '传送失败，请稍后重试'
@@ -495,7 +509,7 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 onMounted(() => {
-  loadRoom()
+  loadRoom(true)
   loadBackpack()
   window.addEventListener('keydown', handleKeydown)
   const mq = window.matchMedia('(max-width: 768px)')
