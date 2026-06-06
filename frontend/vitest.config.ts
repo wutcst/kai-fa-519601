@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
+      '/images/login-bg.png': resolve(__dirname, 'src/test-stubs/login-bg.ts'),
     },
   },
 
