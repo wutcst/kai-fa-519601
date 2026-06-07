@@ -7,12 +7,11 @@ from app.models.player import Player
 from app.models.backpack import Backpack
 from app.models.room import Room
 from app.schemas.player import (
-    LoginResponse, PlayerInfoResponse, PlayerListResponse,
-    MoveResponse, TransResponse,
+    LoginResponse, MoveResponse, PlayerListResponse, TransResponse,
 )
 from app.schemas.result import Result
+from app.utils import room_history_store
 from app.utils.qiniu_upload import save_avatar
-from app.utils.redis_client import redis_client, room_history_key
 
 
 async def login(db: AsyncSession, username: str, password: str):
@@ -65,6 +64,7 @@ async def get_player_info(db: AsyncSession, player_id: int):
     player = await db.get(Player, player_id)
     if not player:
         return Result.error(404, "player not found")
+    from app.schemas.player import PlayerInfoResponse
     return Result.success(PlayerInfoResponse(
         player_id=player.player_id,
         player_name=player.player_name,
@@ -74,22 +74,6 @@ async def get_player_info(db: AsyncSession, player_id: int):
         player_room_id=player.player_room_id,
         player_stamina=player.player_stamina,
     ), "success")
-
-
-async def list_all_players(db: AsyncSession):
-    result = await db.execute(select(Player))
-    players = result.scalars().all()
-    data = [
-        PlayerListResponse(
-            player_id=p.player_id,
-            player_name=p.player_name,
-            player_avatar_url=p.player_avatar_url,
-            player_score=p.player_score,
-            player_room_id=p.player_room_id,
-            player_stamina=p.player_stamina,
-        ) for p in players
-    ]
-    return Result.success(data, "success")
 
 
 async def move_player(db: AsyncSession, player_id: int, direction: str):
@@ -115,14 +99,27 @@ async def move_player(db: AsyncSession, player_id: int, direction: str):
     if not target_room:
         return Result.error(404, "target room not found")
 
-    key = room_history_key(player_id, player.player_backpack_id or 0)
-    await redis_client.rpush(key, str(room.room_id))
+    await room_history_store.push_room_history(db, player_id, player.player_backpack_id or 0, room.room_id)
 
     player.player_room_id = target_room_id
     player.player_stamina -= 2
     await db.commit()
 
     return Result.success(MoveResponse(room_id=target_room_id), "success")
+
+
+async def list_all_players(db: AsyncSession):
+    result = await db.execute(select(Player))
+    players = result.scalars().all()
+    data = [
+        PlayerListResponse(
+            player_id=p.player_id,
+            player_name=p.player_name,
+            player_avatar_url=p.player_avatar_url,
+            player_score=p.player_score,
+        ) for p in players
+    ]
+    return Result.success(data, "success")
 
 
 async def teleport_player(db: AsyncSession, player_id: int):
@@ -146,14 +143,10 @@ async def back_player(db: AsyncSession, player_id: int):
     if not player:
         return Result.error(404, "player not found")
 
-    key = room_history_key(player_id, player.player_backpack_id or 0)
-    history = await redis_client.lrange(key, 0, -1)
-
-    if not history or len(history) < 1:
+    if not await room_history_store.has_room_history(db, player_id, player.player_backpack_id or 0):
         return Result.error(404, "previous room not found")
 
-    previous_room_id = int(history[-1])
-    await redis_client.rpop(key)
+    previous_room_id = await room_history_store.pop_room_history(db, player_id, player.player_backpack_id or 0)
 
     player.player_room_id = previous_room_id
     player.player_stamina -= 2
@@ -167,8 +160,7 @@ async def home_player(db: AsyncSession, player_id: int):
     if not player:
         return Result.error(404, "player not found")
 
-    key = room_history_key(player_id, player.player_backpack_id or 0)
-    await redis_client.rpush(key, str(player.player_room_id))
+    await room_history_store.push_room_history(db, player_id, player.player_backpack_id or 0, player.player_room_id)
 
     player.player_room_id = 1
     player.player_stamina -= 2
