@@ -12,7 +12,7 @@ class Base(DeclarativeBase):
 
 
 async def init_db():
-    from app.models import Player, Room, Item, Backpack, BackpackItem, RoomItem, SaveRecord  # noqa: F401
+    from app.models import Player, Room, Item, Backpack, BackpackItem, RoomItem, SaveRecord, RoomHistory  # noqa: F401
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
