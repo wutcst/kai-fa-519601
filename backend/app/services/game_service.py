@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import select, delete as sa_delete
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.player import Player

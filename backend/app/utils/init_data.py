@@ -1,7 +1,6 @@
 import random
 
 from sqlalchemy import select, delete, func
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import async_session
 from app.models.room import Room
