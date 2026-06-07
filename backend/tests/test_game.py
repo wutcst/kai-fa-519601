@@ -140,3 +140,47 @@ async def test_new_game_resets_state(client: AsyncClient, db: AsyncSession):
 async def test_new_game_player_not_found(client: AsyncClient, db: AsyncSession):
     resp = await client.post("/game/new", json={"player_id": 9999})
     assert resp.json()["code"] == 404
+
+
+# ---------------------------------------------------------------------------
+# extra coverage: multiple saves ordering + read with orphan player
+# ---------------------------------------------------------------------------
+
+async def test_list_saves_ordered_desc(client: AsyncClient, db: AsyncSession):
+    player = await _setup(db, "multi_saver")
+
+    await client.post("/game/save", json={"player_id": player.player_id})
+    player.player_score = 100
+    await db.commit()
+    await client.post("/game/save", json={"player_id": player.player_id})
+
+    resp = await client.post("/game/list", json={"player_id": player.player_id})
+    records = resp.json()["data"]
+    assert len(records) == 2
+    # most recent first — score 100 should be first
+    assert records[0]["playerScore"] == 100
+
+
+async def test_read_game_player_deleted(client: AsyncClient, db: AsyncSession):
+    player = await _setup(db, "ghost")
+
+    await client.post("/game/save", json={"player_id": player.player_id})
+    list_resp = await client.post("/game/list", json={"player_id": player.player_id})
+    save_id = list_resp.json()["data"][0]["saveId"]
+
+    # delete the player directly
+    await db.delete(player)
+    await db.commit()
+
+    resp = await client.post("/game/read", json={"save_id": save_id})
+    assert resp.json()["code"] == 404
+
+
+async def test_new_game_creates_fresh_backpack(client: AsyncClient, db: AsyncSession):
+    player = await _setup(db, "fresh")
+    old_bp_id = player.player_backpack_id
+
+    await client.post("/game/new", json={"player_id": player.player_id})
+    await db.refresh(player)
+
+    assert player.player_backpack_id != old_bp_id
