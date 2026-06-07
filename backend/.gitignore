@@ -9,3 +9,6 @@ venv/
 .vscode/
 *.db
 uploads/
+coverage.xml
+.coverage
+htmlcov/
