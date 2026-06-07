@@ -36,7 +36,7 @@ async def get_backpack_by_player_id(db: AsyncSession, player_id: int):
     ]
 
     return Result.success(
-        BackpackResponse(backpack_id=backpack.backpack_id, backpack_size=backpack.backpack_size, items=item_dtos),
+        BackpackResponse(backpack_id=backpack.backpack_id, backpack_size=backpack.backpack_size, item_list=item_dtos),
         "success",
     )
 
