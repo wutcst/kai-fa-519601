@@ -182,3 +182,63 @@ async def test_home(client: AsyncClient, db: AsyncSession):
 
     resp = await client.post("/player/home", json={"player_id": player.player_id})
     assert resp.json()["code"] == 200
+
+
+# ---------------------------------------------------------------------------
+# move stamina drain + back with history
+# ---------------------------------------------------------------------------
+
+async def test_move_drains_stamina(client: AsyncClient, db: AsyncSession):
+    room_a = Room(room_name="左")
+    room_b = Room(room_name="右")
+    db.add(room_a)
+    db.add(room_b)
+    await db.flush()
+    room_a.room_right_id = room_b.room_id
+    await db.commit()
+
+    player, _ = await _seed_player(db, room_a.room_id, name="stamina_mover")
+    original = player.player_stamina
+
+    await client.post("/player/move", json={"player_id": player.player_id, "direction": "right"})
+    await db.refresh(player)
+    assert player.player_stamina == original - 2
+
+
+async def test_back_with_history(client: AsyncClient, db: AsyncSession):
+    room_a = Room(room_name="A")
+    room_b = Room(room_name="B")
+    db.add(room_a)
+    db.add(room_b)
+    await db.flush()
+    room_a.room_right_id = room_b.room_id
+    await db.commit()
+
+    player, _ = await _seed_player(db, room_a.room_id, name="backtrack")
+
+    # move to room_b — this pushes room_a into history
+    await client.post("/player/move", json={"player_id": player.player_id, "direction": "right"})
+
+    resp = await client.post("/player/back", json={"player_id": player.player_id})
+    assert resp.json()["code"] == 200
+    assert resp.json()["data"]["roomId"] == room_a.room_id
+
+
+async def test_move_player_not_found(client: AsyncClient, db: AsyncSession):
+    resp = await client.post("/player/move", json={"player_id": 9999, "direction": "up"})
+    assert resp.json()["code"] == 404
+
+
+async def test_trans_player_not_found(client: AsyncClient, db: AsyncSession):
+    resp = await client.post("/player/trans", json={"player_id": 9999})
+    assert resp.json()["code"] == 404
+
+
+async def test_back_player_not_found(client: AsyncClient, db: AsyncSession):
+    resp = await client.post("/player/back", json={"player_id": 9999})
+    assert resp.json()["code"] == 404
+
+
+async def test_home_player_not_found(client: AsyncClient, db: AsyncSession):
+    resp = await client.post("/player/home", json={"player_id": 9999})
+    assert resp.json()["code"] == 404
