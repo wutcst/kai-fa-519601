@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.player import Player
 from app.models.backpack import Backpack
 from app.models.save_record import SaveRecord
-from app.schemas.game import SaveRecordResponse
+from app.schemas.game import SaveRecordResponse, SaveRecordDetailResponse
 from app.schemas.player import LoginResponse
 from app.schemas.result import Result
 
@@ -66,14 +66,14 @@ async def read_game(db: AsyncSession, save_id: int):
     await db.commit()
 
     return Result.success(
-        SaveRecordResponse(
-            save_id=record.save_id,
+        SaveRecordDetailResponse(
             player_id=record.player_id,
-            save_time=record.save_time,
+            player_name=player.player_name,
             player_score=record.player_score,
             player_stamina=record.player_stamina,
             player_room_id=record.player_room_id,
             player_backpack_id=record.player_backpack_id,
+            save_time=record.save_time,
         ),
         "game loaded and player state updated",
     )
