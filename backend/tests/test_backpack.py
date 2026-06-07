@@ -185,3 +185,76 @@ async def test_use_item_not_found(client: AsyncClient, db: AsyncSession):
 
     resp = await client.post("/backpack/use", json={"player_id": player.player_id, "item_id": 9999})
     assert resp.json()["code"] == 404
+
+
+# ---------------------------------------------------------------------------
+# extra edge cases for coverage
+# ---------------------------------------------------------------------------
+
+async def test_backpack_player_no_backpack(client: AsyncClient, db: AsyncSession):
+    # player exists but has no backpack_id set
+    room = Room(room_name="x")
+    db.add(room)
+    await db.flush()
+    player = Player(
+        player_name="nobp",
+        player_password="pw",
+        player_score=0,
+        player_stamina=200,
+        player_room_id=room.room_id,
+    )
+    db.add(player)
+    await db.commit()
+
+    resp = await client.post("/backpack/list", json={"player_id": player.player_id})
+    assert resp.json()["code"] == 404
+
+
+async def test_use_item_other_consumes_stamina(client: AsyncClient, db: AsyncSession):
+    player, bp, _ = await _setup(db, "user4")
+
+    item = Item(item_name="武器（短剑）", item_size=30, item_value=80)
+    db.add(item)
+    await db.flush()
+    db.add(BackpackItem(backpack_id=bp.backpack_id, item_id=item.item_id))
+    await db.commit()
+
+    original = player.player_stamina
+    resp = await client.post("/backpack/use", json={"player_id": player.player_id, "item_id": item.item_id})
+    assert resp.json()["code"] == 200
+
+    await db.refresh(player)
+    assert player.player_stamina == original - 2
+
+
+async def test_throw_item_lands_in_room(client: AsyncClient, db: AsyncSession):
+    player, bp, room = await _setup(db, "thrower3")
+
+    item = Item(item_name="宝石", item_size=10, item_value=200)
+    db.add(item)
+    await db.flush()
+    db.add(BackpackItem(backpack_id=bp.backpack_id, item_id=item.item_id))
+    await db.commit()
+
+    await client.post("/backpack/throw", json={"player_id": player.player_id, "item_id": item.item_id})
+
+    # item should now be in the room
+    resp = await client.post("/room/info", json={"room_id": room.room_id})
+    names = [i["itemName"] for i in resp.json()["data"]["items"]]
+    assert "宝石" in names
+
+
+async def test_pick_removes_item_from_room(client: AsyncClient, db: AsyncSession):
+    player, _, room = await _setup(db, "picker4")
+
+    item = Item(item_name="火把", item_size=10, item_value=5)
+    db.add(item)
+    await db.flush()
+    db.add(RoomItem(room_id=room.room_id, item_id=item.item_id))
+    await db.commit()
+
+    await client.post("/backpack/pick", json={"player_id": player.player_id, "item_id": item.item_id})
+
+    resp = await client.post("/room/info", json={"room_id": room.room_id})
+    names = [i["itemName"] for i in resp.json()["data"]["items"]]
+    assert "火把" not in names
