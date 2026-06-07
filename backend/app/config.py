@@ -7,9 +7,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 class Settings(BaseSettings):
     db_path: str = str(BASE_DIR / "game.db")
 
-    redis_host: str = "localhost"
-    redis_port: int = 6379
-
     upload_dir: str = str(BASE_DIR / "uploads")
 
     @property
@@ -18,6 +15,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 
 settings = Settings()
