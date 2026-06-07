@@ -32,14 +32,14 @@ async def get_info(req: PlayerInfoRequest, db: AsyncSession = Depends(get_db)):
     return await player_service.get_player_info(db, req.player_id)
 
 
-@router.get("/list")
-async def list_players(db: AsyncSession = Depends(get_db)):
-    return await player_service.list_all_players(db)
-
-
 @router.post("/move")
 async def move(req: MoveRequest, db: AsyncSession = Depends(get_db)):
     return await player_service.move_player(db, req.player_id, req.direction)
+
+
+@router.get("/list")
+async def list_players(db: AsyncSession = Depends(get_db)):
+    return await player_service.list_all_players(db)
 
 
 @router.post("/trans")
