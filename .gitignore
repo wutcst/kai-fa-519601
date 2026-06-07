@@ -8,3 +8,6 @@ __pycache__/
 node_modules/
 dist/
 dev.txt
+*.log
+backend/game.db*
+tmp-sync-backup/
