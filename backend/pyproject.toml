@@ -6,6 +6,5 @@ addopts = "--cov=app --cov-report=term-missing --cov-report=xml:coverage.xml"
 
 [tool.coverage.run]
 omit = [
-    "app/utils/qiniu_upload.py",
     "app/utils/init_data.py",
 ]
