@@ -18,7 +18,7 @@ async def get_room_info(db: AsyncSession, room_id: int):
 
     if not relations:
         return Result.success(
-            RoomInfoResponse(room_id=room.room_id, room_name=room.room_name, item_list=[]),
+            RoomInfoResponse(room_id=room.room_id, room_name=room.room_name, items=[]),
             "no items in room",
         )
 
@@ -31,6 +31,6 @@ async def get_room_info(db: AsyncSession, room_id: int):
     ]
 
     return Result.success(
-        RoomInfoResponse(room_id=room.room_id, room_name=room.room_name, item_list=item_dtos),
+        RoomInfoResponse(room_id=room.room_id, room_name=room.room_name, items=item_dtos),
         "success",
     )
