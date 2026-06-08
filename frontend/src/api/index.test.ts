@@ -430,7 +430,7 @@ describe('api/index.ts', () => {
     })
 
     it('load sends saveId', () => {
-      gameApi.load(3)
+      gameApi.load({ saveId: 3 })
 
       expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith(
         '/game/read',
