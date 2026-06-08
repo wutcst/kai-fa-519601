@@ -1,1088 +1,1221 @@
 <template>
-  <div class="game-container" :style="backgroundStyle">
-    <div class="game-layout">
-      <aside class="side-panel player-panel">
-        <div class="player-shell">
-          <div class="panel-heading">
-            <span class="panel-kicker">Player</span>
-            <h2 class="panel-title">冒险者状态</h2>
-          </div>
-          <PlayerInfo class="player-card" />
-          <el-button class="backpack-trigger" type="primary" @click="openBackpack">
-            背包 (B)
-          </el-button>
-        </div>
-      </aside>
-
-      <main class="scene-panel">
-        <div class="scene-shell">
-          <div class="scene-meta">
-            <span class="scene-kicker">当前场景</span>
-            <span class="scene-room">{{ currentRoom.roomName || '正在探索未知区域' }}</span>
-          </div>
-          <GameKeyHints />
-          <div class="game-scene">
-            <div class="nav-arrows">
-              <button class="arrow up" :disabled="!canMove('up') || isMoving" @click="move('up')">
-                W
-              </button>
-              <div class="arrow-row">
-                <button
-                  class="arrow left"
-                  :disabled="!canMove('left') || isMoving"
-                  @click="move('left')"
-                >
-                  A
-                </button>
-                <button
-                  class="arrow down"
-                  :disabled="!canMove('down') || isMoving"
-                  @click="move('down')"
-                >
-                  S
-                </button>
-                <button
-                  class="arrow right"
-                  :disabled="!canMove('right') || isMoving"
-                  @click="move('right')"
-                >
-                  D
-                </button>
-              </div>
-            </div>
-            <div class="room-info">
-              <h3>{{ currentRoom.roomName }}</h3>
-              <p class="room-desc">
-                {{ getRoomDescription(currentRoom.roomName) }}
-              </p>
-              <div class="scene-objects">
-                <div class="scene-object crate" @click="openCrate">
-                  <span class="object-icon">📦</span>
-                  <span class="object-label">木箱</span>
-                </div>
+    <div class="game-container" :style="backgroundStyle">
+        <PlayerInfo ref="playerInfoRef" />
+        <GameKeyHints />
+        <!-- ---------- Game Scene ---------- -->
+        <div v-show="showGameScene" class="game-scene">
+            <!-- Scene Objects -->
+            <div class="scene-objects">
+                <!-- 木箱 -->
                 <div
-                  v-for="item in currentRoom.itemList"
-                  :key="item.itemId"
-                  class="scene-object room-item"
-                  @click="pickItem(item.itemId)"
+                    class="scene-object wooden-crate"
+                    :class="{ highlighted: hoveredObject === 'crate' }"
+                    :style="
+                        getItemPositionStyle(
+                            -1,
+                            currentRoom.itemList.length + 1
+                        )
+                    "
+                    @click="interactWith('crate')"
+                    @mouseenter="hoveredObject = 'crate'"
+                    @mouseleave="hoveredObject = null"
                 >
-                  <span class="object-icon">{{ getItemIcon(item.itemName) }}</span>
-                  <span class="object-label">{{ item.itemName }}</span>
+                    <div class="object-icon">📦</div>
                 </div>
-              </div>
-              <div class="room-item-panel">
-                <div class="room-item-panel-header">
-                  <span>房间物品</span>
-                  <span class="room-item-count">{{ currentRoom.itemList.length }} 件</span>
-                </div>
-                <div v-if="currentRoom.itemList.length === 0" class="room-item-empty">
-                  当前房间暂无可拾取物品
-                </div>
-                <ul v-else class="room-item-list">
-                  <li
-                    v-for="item in currentRoom.itemList"
-                    :key="`room-item-${item.itemId}`"
-                    class="room-item-row"
-                  >
-                    <div class="room-item-summary">
-                      <span class="room-item-name">{{ item.itemName }}</span>
-                      <div class="room-item-stats">
-                        <span class="room-item-meta">重量 {{ item.itemSize }}</span>
-                        <span class="room-item-meta">价值 {{ item.itemValue }}</span>
-                      </div>
+
+                <!-- 动态渲染房间物品 -->
+                <div
+                    v-for="(item, idx) in currentRoom.itemList"
+                    :key="item.itemId"
+                    class="scene-object room-item"
+                    :style="
+                        getItemPositionStyle(
+                            idx,
+                            currentRoom.itemList.length + 1
+                        )
+                    "
+                    :class="{
+                        highlighted: hoveredObject === 'item-' + item.itemId
+                    }"
+                    @mouseenter="hoveredObject = 'item-' + item.itemId"
+                    @mouseleave="hoveredObject = null"
+                    @click.stop="pickupRoomItem(item)"
+                >
+                    <div class="object-icon">
+                        {{ iconMap[item.itemName] || '🎒' }}
                     </div>
-                    <el-button
-                      class="room-item-pick"
-                      size="small"
-                      type="primary"
-                      :disabled="backpackCount >= backpackSize"
-                      @click="pickItem(item.itemId)"
+                    <div
+                        v-if="hoveredObject === 'item-' + item.itemId"
+                        class="item-tooltip"
                     >
-                      拾取
-                    </el-button>
-                  </li>
-                </ul>
-              </div>
+                        {{ item.itemName }}<br />价值: {{ item.itemValue
+                        }}<br />重量: {{ item.itemSize }}
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </main>
 
-      <aside class="side-panel leaderboard-panel">
-        <LeaderBoard />
-      </aside>
-    </div>
-
-    <!-- 木箱弹窗 -->
-    <div v-if="showCrate" class="crate-overlay" @click.self="showCrate = false">
-      <div class="crate-modal">
-        <div class="crate-header">
-          <h3>📦 木箱中的物品</h3>
-          <button class="close-btn" @click="showCrate = false">✕</button>
-        </div>
-        <div class="crate-items">
-          <div
-            v-for="item in currentRoom.itemList"
-            :key="item.itemId"
-            class="crate-item"
-            :class="{ disabled: backpackCount >= backpackSize }"
-            @click="pickItemFromCrate(item.itemId)"
-          >
-            <span class="object-icon">{{ getItemIcon(item.itemName) }}</span>
-            <div class="crate-item-info">
-              <span class="crate-item-name">{{ item.itemName }}</span>
-              <span class="crate-item-meta"
-                >重量: {{ item.itemSize }} | 价值: {{ item.itemValue }}</span
-              >
+        <!-- ---------- Item Pickup Modal ---------- -->
+        <div
+            v-if="showItemPickup"
+            class="item-pickup-overlay"
+            @click="closeItemPickup"
+        >
+            <div class="item-pickup-modal" @click.stop>
+                <div class="modal-header">
+                    <h3>木箱中的物品</h3>
+                    <button class="close-btn" @click="closeItemPickup">
+                        ✕
+                    </button>
+                </div>
+                <div class="items-grid">
+                    <div
+                        v-for="item in crateItems"
+                        :key="item.id"
+                        class="pickup-item"
+                        :class="{
+                            disabled: isItemTooHeavyForCrate(item)
+                        }"
+                        @click.stop="pickupItem(item)"
+                    >
+                        <div class="pickup-item-icon">{{ item.icon }}</div>
+                        <div class="pickup-item-name">{{ item.name }}</div>
+                        <div class="pickup-item-value">
+                            价值: {{ item.value }}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <p
+                        v-if="isBackpackFullForCrate"
+                        class="inventory-full-warning"
+                    >
+                        背包空间不足！请先清理背包。
+                    </p>
+                </div>
             </div>
-          </div>
-          <div v-if="currentRoom.itemList.length === 0" class="crate-empty">箱子里空空如也…</div>
         </div>
-        <div class="crate-footer">
-          <p v-if="backpackCount >= backpackSize" class="inventory-full-warning">
-            背包已满！请先清理背包空间。
-          </p>
-          <el-button
-            type="primary"
-            :disabled="backpackCount >= backpackSize || currentRoom.itemList.length === 0"
-            @click="takeAllItems"
-          >
-            全部拾取
-          </el-button>
-        </div>
-      </div>
-    </div>
-    <Backpack ref="backpackRef" />
 
-    <!-- 操作消息提示 -->
-    <transition name="msg-fade">
-      <div v-if="actionMessage" class="action-message">
-        {{ actionMessage }}
-      </div>
-    </transition>
-  </div>
+        <!-- ---------- Scene Description ---------- -->
+        <div class="scene-description">
+            <p>{{ sceneDesc }}</p>
+        </div>
+
+        <!-- ---------- Action Messages ---------- -->
+        <div v-if="actionMessage" class="action-message">
+            {{ actionMessage }}
+        </div>
+    </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import {
+    ref,
+    reactive,
+    computed,
+    onMounted,
+    onBeforeUnmount,
+    provide
+} from 'vue'
 import { playerApi, roomApi, backpackApi } from '@/api'
-import PlayerInfo from '@/components/PlayerInfo.vue'
-import LeaderBoard from '@/components/LeaderBoard.vue'
-import Backpack from '@/components/Backpack.vue'
-import GameKeyHints from '@/components/GameKeyHints.vue'
+import { safeData } from '@/utils'
+import { bus } from '@/utils/eventBus'
 
-type Direction = 'up' | 'down' | 'left' | 'right'
+type FetchRoomFn = (roomId: number) => Promise<void>
 
-interface RoomDoors {
-  up: boolean
-  down: boolean
-  left: boolean
-  right: boolean
+import PlayerInfo from '../components/PlayerInfo.vue'
+import GameKeyHints from '../components/GameKeyHints.vue'
+
+// 在这里新增：用于存储"木箱"内物品的列表
+const crateItems = ref<
+    Array<{
+        id: number
+        name: string
+        value: number
+        size: number
+        icon: string
+    }>
+>([]) // ← 新增
+
+// 新增：点击木箱时的交互逻辑
+async function interactWith(obj: string) {
+    if (obj === 'crate') {
+        // 直接使用已加载的 currentRoom.itemList，不再重复拉取房间数据
+        crateItems.value = currentRoom.itemList.map(i => ({
+            id: i.itemId,
+            name: i.itemName,
+            value: i.itemValue,
+            size: i.itemSize,
+            icon: iconMap[i.itemName] || '🎒'
+        }))
+
+        if (crateItems.value.length > 0) {
+            showItemPickup.value = true
+        } else {
+            actionMessage.value = '箱子里什么都没有'
+            setTimeout(() => (actionMessage.value = ''), 2000)
+        }
+    }
 }
 
+// 新增：监听"item-dropped"事件的回调
+function handleItemDropped(payload: {
+    itemId: number
+    itemName: string
+    itemSize: number
+    itemValue: number
+}) {
+    console.log('[Game.vue] 收到 item-dropped 事件，payload =', payload)
+    // 把这个物品对象加回 currentRoom.itemList
+    currentRoom.itemList.push({
+        itemId: payload.itemId,
+        itemName: payload.itemName,
+        itemSize: payload.itemSize,
+        itemValue: payload.itemValue
+    })
+    // 可选：给个提示文字
+    actionMessage.value = `已在房间内丢弃 ${payload.itemName}`
+    setTimeout(() => (actionMessage.value = ''), 2000)
+}
+
+const playerInfoRef = ref<InstanceType<typeof PlayerInfo> | null>(null)
+
+/* ---------- 当前房间名称对应的背景图映射 ---------- */
+const roomBackgroundMap: Record<string, string> = {
+    入口大厅: 'images/entrance_hall.png',
+    古书图书馆: 'images/library.png',
+    炼金实验室: 'images/alchemy_lab.png',
+    兵器库: 'images/armory.png',
+    机关走廊: 'images/mechanism_corridor.png',
+    监狱牢房: 'images/prison_cell.png',
+    秘密宝藏室: 'images/treasure_room.png',
+    传送房间: 'images/teleport_room.png',
+    最终祭坛: 'images/final_altar.png'
+    // 如果出现新房间，请在这里继续补充对应图片
+}
+
+/**
+ * 动态计算 backgroundStyle：
+ * 1. 根据 currentRoom.roomName 从映射里找到对应的图片路径；
+ * 2. 找不到时，使用默认背景 (/images/default_bg.png)；
+ * 3. 最终返回一个包含 backgroundImage、no-repeat、cover、center 的 style 对象。
+ */
+const backgroundStyle = computed(() => {
+    const imgPath =
+        roomBackgroundMap[currentRoom.roomName] || 'images/entrance_hall.png'
+    return {
+        backgroundColor: '#1a1a2e',
+        backgroundImage: `url('${imgPath}')`,
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center center'
+    }
+})
+
+/* ---------- 1. 新增：处理"传送房间"逻辑 ---------- */
+/**
+ * 修正后的 handleTeleport(): 进入传送房间后，
+ * 1. 立即进入 3 秒倒计时（每秒更新 actionMessage）
+ * 2. 倒计时结束后调用后端 trans 接口并刷新玩家、房间
+ */
+async function handleTeleport() {
+    // 如果正在移动或倒计时中，就不再重复触发
+    if (isMoving.value) return
+    isMoving.value = true
+
+    // 初始化倒计时秒数为 3
+    let timeLeft = 3
+    countdown.value = timeLeft
+    actionMessage.value = `传送倒计时：${timeLeft} 秒` // ← 一定要用 .value 赋值，不要写成 actionMessage(...)
+    setTimeout(() => (actionMessage.value = ''), 3000)
+    // 每秒减少 1，更新倒计时文字
+    const timerId = setInterval(() => {
+        timeLeft--
+        if (timeLeft > 0) {
+            countdown.value = timeLeft
+            actionMessage.value = `传送倒计时：${timeLeft} 秒`
+        } else {
+            // 倒计时结束
+            clearInterval(timerId)
+            countdown.value = null
+            actionMessage.value = `传送中…`
+            // ← 用 .value 赋值
+
+            // 立刻执行真正的传送逻辑（不再二次延迟）
+            ;(async () => {
+                try {
+                    console.log('[handleTeleport] 调用 playerApi.trans() 开始…')
+                    const resTrans = await playerApi.trans()
+                    console.log(
+                        '[handleTeleport] playerApi.trans() 返回：',
+                        resTrans.data
+                    )
+
+                    const { code, message } = resTrans.data
+                    if (code !== 200) {
+                        throw new Error(
+                            `传送接口返回异常：code=${code}, message=${message}`
+                        )
+                    }
+
+                    // 成功后用子组件的 initPlayer() 来刷新 player 和 room
+                    if (playerInfoRef.value?.initPlayer) {
+                        console.log(
+                            '[handleTeleport] 传送成功，调用 playerInfoRef.initPlayer() 同步玩家信息…'
+                        )
+                        await playerInfoRef.value.initPlayer()
+                        // 同步 Game.vue 自身的 player.roomId，避免后续操作（如 pickupRoomItem）使用旧值
+                        if (currentRoom.roomId) {
+                            player.roomId = currentRoom.roomId
+                        }
+                        console.log(
+                            '[handleTeleport] initPlayer 完成，player.roomId 与 currentRoom 均已更新。'
+                        )
+                    } else {
+                        console.warn(
+                            '[handleTeleport] playerInfoRef.initPlayer 不存在，无法同步玩家信息。'
+                        )
+                    }
+
+                    // currentRoom.roomName 已经被 initPlayer() 内部的 fetchRoom 刷新
+                    actionMessage.value = `已传送到 ${currentRoom.roomName}`
+                    setTimeout(() => {
+                        actionMessage.value = ''
+                    }, 2000)
+                } catch (err: any) {
+                    console.error('[handleTeleport] 传送过程中出错：', err)
+                    actionMessage.value = '传送失败，请稍后重试'
+                    setTimeout(() => {
+                        actionMessage.value = ''
+                    }, 2000)
+                } finally {
+                    isMoving.value = false
+                    console.log(
+                        '[handleTeleport] 传送结束，isMoving 重置为 false。'
+                    )
+                }
+            })()
+        }
+    }, 1000)
+}
+
+const countdown = ref<number | null>(null) // 倒计时剩余秒数，null 表示未在倒计时中
+
+/* ---------- 状态 ---------- */
+/* -----------------  移动端判定 ----------------- */
+const mobileQuery = window.matchMedia('(max-width: 768px)')
+const isMobile = ref(mobileQuery.matches)
+
+const showGameScene = ref(isMobile.value)
+
+function handleToggleScene() {
+    if (isMobile.value) showGameScene.value = isMobile.value // flag=true 显示；false 隐藏
+}
+
+function onMediaChange(e: MediaQueryListEvent) {
+    isMobile.value = e.matches
+    showGameScene.value = e.matches
+}
+mobileQuery.addEventListener('change', onMediaChange)
+
+onMounted(() => {
+    handleToggleScene()
+    mobileQuery.addEventListener('change', e => {
+        isMobile.value = e.matches
+    })
+    handleToggleScene()
+    bus.on('toggle-scene', handleToggleScene)
+})
+onBeforeUnmount(() => {
+    bus.off('toggle-scene', handleToggleScene)
+    mobileQuery.removeEventListener('change', onMediaChange)
+})
+
+const player = reactive({
+    id: 0,
+    name: '',
+    avatarUrl: '',
+    score: 0,
+    health: 0,
+    maxHealth: 100,
+    roomId: 1
+})
+
+interface BackpackItem {
+    itemId: number
+    itemName: string
+    itemSize: number
+    itemValue: number
+}
+
+interface BackpackState {
+    backpackId: number | null
+    backpackSize: number
+    itemList: BackpackItem[]
+}
+
+const backpackInfo = reactive<BackpackState>({
+    backpackId: null,
+    backpackSize: 0,
+    itemList: []
+})
+
 interface RoomItem {
-  itemId: number
-  itemName: string
-  itemSize: number
-  itemValue: number
+    itemId: number
+    itemName: string
+    itemSize: number
+    itemValue: number
 }
 
 interface RoomState {
-  roomName: string
-  itemList: RoomItem[]
-  doors?: Partial<RoomDoors>
+    roomId: number | null
+    roomName: string
+    itemList: RoomItem[]
 }
 
-const currentRoom = ref<RoomState>({ roomName: '', itemList: [] })
-const backpackRef = ref<InstanceType<typeof Backpack> | null>(null)
-const actionMessage = ref('')
-const backpackSize = ref(0)
-const backpackCount = ref(0)
-const isMoving = ref(false)
-const countdown = ref<number | null>(null)
-const showCrate = ref(false)
-const isMobile = ref(window.matchMedia('(max-width: 768px)').matches)
-
-function normalizeDoors(doors: unknown): Partial<RoomDoors> | undefined {
-  if (!doors || typeof doors !== 'object') {
-    return undefined
-  }
-
-  const rawDoors = doors as Partial<Record<Direction, unknown>>
-
-  return {
-    up: rawDoors.up === true,
-    down: rawDoors.down === true,
-    left: rawDoors.left === true,
-    right: rawDoors.right === true,
-  }
-}
-
-function normalizeRoomData(data: any): RoomState {
-  return {
-    ...data,
-    roomName: data?.roomName ?? '',
-    itemList: data?.itemList ?? data?.items ?? [],
-    doors: normalizeDoors(data?.doors),
-  }
-}
-
-function canMove(direction: Direction): boolean {
-  const doors = currentRoom.value.doors
-
-  if (!doors) {
-    return true
-  }
-
-  return doors[direction] ?? true
-}
-
-const iconMap: Record<string, string> = {
-  火把: '🔥',
-  '古书（密码书）': '📖',
-  '炼金药水（小）': '🧪',
-  炼金试剂包: '🧬',
-  钥匙: '🔑',
-  '武器（短剑）': '🗡️',
-  盾牌: '🛡️',
-  '金币（堆）': '💰',
-  宝石: '💎',
-  魔法饼干: '🍪',
-  体力药水: '⚡',
-}
-
-function getItemIcon(name: string): string {
-  return iconMap[name] || '🎒'
-}
-
-const roomDescriptions: Record<string, string> = {
-  主城: '🏰 冒险者聚集的中心城镇，温暖的阳光洒在石板路上，这里是所有旅程的起点。',
-  森林: '🌲 茂密的原始森林，阳光透过层层树叶洒下斑驳的光影，空气中弥漫着泥土和松脂的清香。',
-  沙漠: '🏜️ 一望无际的金色沙海，热浪翻滚，远处隐约可见古老的遗迹。',
-  沼泽: '🕸️ 阴暗潮湿的沼泽地，泥泞中冒着气泡，四周弥漫着腐朽的气息。',
-  洞穴: '⛏️ 幽深的洞穴中回荡着水滴声，岩壁上闪烁着神秘的矿石光芒。',
-  雪山: '🏔️ 白雪皑皑的山峰，寒风凛冽，每一步都在松软的雪地上留下深深的足迹。',
-  城堡: '🏯 古老的石砌城堡，高耸的塔楼和厚重的城墙诉说着昔日的辉煌。',
-  地牢: '🔗 阴暗潮湿的地下牢房，铁链的碰撞声在空旷的走廊中回响。',
-  村庄: '🏘️ 宁静的小村庄，炊烟袅袅，友善的村民在田间劳作。',
-  废墟: '💀 被遗忘的古老废墟，断壁残垣间爬满了藤蔓，隐藏着不为人知的秘密。',
-  海滩: '🏖️ 金色的沙滩与碧蓝的海水相接，海浪轻轻拍打着岸边，海风带来咸咸的味道。',
-  火山: '🌋 炽热的火山口喷吐着浓烟，岩浆在裂缝中缓缓流淌，大地在脚下微微颤抖。',
-  花园: '🌸 繁花似锦的魔法花园，五彩斑斓的花朵散发着迷人的芬芳，蝴蝶在花丛中翩翩起舞。',
-  塔楼: '🗼 高耸入云的魔法塔，螺旋楼梯蜿蜒而上，塔顶可以俯瞰整片大陆。',
-  墓地: '🪦 寂静的古老墓地，墓碑上刻满了岁月的痕迹，夜风中似乎能听到低语。',
-  市场: '🛒 热闹的集市，商贩们的叫卖声此起彼伏，各种奇珍异宝琳琅满目。',
-  图书馆: '📚 宏伟的古老图书馆，高耸的书架上摆满了泛黄的古籍，空气中弥漫着纸张和墨水的气息。',
-  实验室: '⚗️ 炼金术士的秘密实验室，桌上摆满了五颜六色的药剂和奇形怪状的仪器。',
-  神庙: '⛪ 庄严的神庙矗立在山巅，彩色的玻璃窗透出神圣的光芒，虔诚的祈祷声在殿堂中回荡。',
-  港口: '⚓ 繁忙的港口码头，船只来来往往，海鸥在桅杆间盘旋鸣叫。',
-}
-
-function getRoomDescription(name: string): string {
-  for (const [key, desc] of Object.entries(roomDescriptions)) {
-    if (name.includes(key)) return desc
-  }
-  return '🔍 一个充满未知的房间，等待着你去探索其中的秘密。'
-}
-
-function isTeleportRoom(name: string): boolean {
-  return name.includes('传送')
-}
-
-const roomBackgroundMap: Record<string, string> = {
-  主城: 'linear-gradient(135deg, #f5d78c 0%, #e8b86d 30%, #c9a05a 60%, #8b6914 100%)',
-  森林: 'linear-gradient(180deg, #2d5a27 0%, #1a3a15 40%, #0d2608 80%, #1a0f00 100%)',
-  沙漠: 'linear-gradient(180deg, #f4a460 0%, #e8953a 30%, #d4a574 60%, #c4956a 100%)',
-  沼泽: 'linear-gradient(180deg, #3b5323 0%, #2d3d1a 30%, #1a2a0f 60%, #0d1a08 100%)',
-  洞穴: 'linear-gradient(180deg, #4a3728 0%, #3a2a1a 30%, #2a1a0f 60%, #1a0f08 100%)',
-  雪山: 'linear-gradient(180deg, #e8f0f8 0%, #c8d8e8 30%, #a0b8d0 60%, #7898b0 100%)',
-  城堡: 'linear-gradient(180deg, #6b5b4f 0%, #5a4a3f 30%, #4a3a2f 60%, #3a2a1f 100%)',
-  地牢: 'linear-gradient(180deg, #2a1a1a 0%, #1a0f0f 40%, #0f0808 70%, #080404 100%)',
-  村庄: 'linear-gradient(180deg, #7ec850 0%, #5a9e3a 30%, #8bc34a 60%, #4a7a2a 100%)',
-  废墟: 'linear-gradient(180deg, #6b5b4f 0%, #5a4a3a 30%, #4a3a2a 60%, #3a2a1a 100%)',
-  海滩: 'linear-gradient(180deg, #87ceeb 0%, #5ba3c9 30%, #f4d58c 60%, #e8c878 100%)',
-  火山: 'linear-gradient(180deg, #4a1a0a 0%, #8b2500 30%, #ff4500 50%, #2a0a00 100%)',
-  花园: 'linear-gradient(135deg, #90c850 0%, #e898c8 30%, #f0d0e0 50%, #a0d860 100%)',
-  塔楼: 'linear-gradient(180deg, #4a4a6a 0%, #3a3a5a 30%, #2a2a4a 60%, #1a1a3a 100%)',
-  墓地: 'linear-gradient(180deg, #2a3a2a 0%, #1a2a1a 30%, #0f1a0f 60%, #080f08 100%)',
-  市场: 'linear-gradient(135deg, #d4a574 0%, #c49464 30%, #e8c878 60%, #b88454 100%)',
-  图书馆: 'linear-gradient(180deg, #5a4a3a 0%, #4a3a2a 30%, #3a2a1a 60%, #2a1a0f 100%)',
-  实验室: 'linear-gradient(135deg, #3a4a5a 0%, #2a3a4a 30%, #1a2a3a 60%, #0f1a2a 100%)',
-  神庙: 'linear-gradient(180deg, #f0e8d0 0%, #e0d8c0 30%, #d0c8b0 60%, #c0b8a0 100%)',
-  港口: 'linear-gradient(180deg, #5b8fa8 0%, #4a7a90 30%, #3a6a80 60%, #2a5a70 100%)',
-}
-
-const backgroundStyle = computed(() => {
-  const name = currentRoom.value.roomName
-  for (const [key, gradient] of Object.entries(roomBackgroundMap)) {
-    if (name.includes(key)) return { background: gradient }
-  }
-  return { background: '#1a1a2e' }
+const currentRoom = reactive<RoomState>({
+    roomId: null,
+    roomName: '',
+    itemList: []
 })
 
-async function loadRoom(autoTeleport = false) {
-  const playerId = Number(localStorage.getItem('playerId'))
-  const infoRes = await playerApi.getInfo(playerId)
-  if (infoRes.data.code === 200) {
-    const roomId = infoRes.data.data.playerRoomId
-    const roomRes = await roomApi.getInfo(roomId)
-    if (roomRes.data.code === 200) {
-      currentRoom.value = normalizeRoomData(roomRes.data.data)
-      if (autoTeleport) {
-        checkTeleport()
-      }
-    }
-  }
+const hoveredObject = ref<string | null>(null)
+const actionMessage = ref('')
+const showItemPickup = ref(false)
+
+/** 箱子拾取：基于重量判断单件物品是否超重（灰显） */
+const isItemTooHeavyForCrate = (item: { size: number }) => {
+    const usedWeight = backpackInfo.itemList.reduce((sum, i) => sum + i.itemSize, 0)
+    return usedWeight + item.size > backpackInfo.backpackSize
 }
 
-async function loadBackpack() {
-  const playerId = Number(localStorage.getItem('playerId'))
-  try {
-    const res = await backpackApi.getList(playerId)
-    if (res.data.code === 200) {
-      backpackSize.value = res.data.data.backpackSize || 0
-      backpackCount.value = (res.data.data.itemList || []).length
-    }
-  } catch {
-    // 静默失败
-  }
+/** 箱子拾取：背包是否已满（所有物品都放不下） */
+const isBackpackFullForCrate = computed(() => {
+    const usedWeight = backpackInfo.itemList.reduce((sum, i) => sum + i.itemSize, 0)
+    return crateItems.value.every(item => usedWeight + item.size > backpackInfo.backpackSize)
+})
+
+// 1. 定义一个对象，键名为房间名称，值为对应的故事化描述
+const roomDescriptions: Record<string, string> = {
+    入口大厅: `
+    月光透过拱形的石窗，投射在古老的石砖地面上。你脚下的回声
+    仿佛在提醒你，这里曾是昔日祭祀仪式的舞台。墙壁上斑驳的壁画
+    隐约诉说着远古时代的秘密……`,
+    古书图书馆: `
+    书架高及天花，尘封的卷轴散发出陈旧的墨香。你听见微弱的风声
+    从破裂的窗棂吹进，掀动一页页泛黄的页码。每一本古书都藏着
+    解开遗迹谜题的蛛丝马迹。`,
+    炼金实验室: `
+    青铜试剂瓶在昏暗烛光下泛着幽绿光芒，各种符文刻印在石桌边缘。
+    空气中充斥着硫磺与药草的气味，隐约能听见某个未完成实验的
+    蒸汽嘶嘶作响。此处曾有人试图突破凡人之力的边界。`,
+    兵器库: `
+    冷光映照在整齐排列的长剑与战戟之上，刀刃似乎依旧寒冷。墙上
+    钉着破碎的盾牌与战旗，似乎在诉说着一场惨烈的战斗曾在此处
+    上演。当你拿起一把铁锤，能感受到它沉重的历史。`,
+    机关走廊: `
+    地砖上布满古老机关的暗格，偶尔有一块石板微微下沉，仿佛在
+    试探你的脚步。远处传来机关齿轮咔嚓旋转的声响，每一步都可能
+    触发未知陷阱。谨慎行走，否则下一秒就会掉进深渊。`,
+    监狱牢房: `
+    黯淡的烛火在铁栏之间摇曳，墙壁上还留有拷打时的铁链印痕。
+    湿润的空气中弥漫着腐朽和绝望的气息。曾有多少羔羊在此低声
+    哀嚎，如今只剩下孤寂的回音在诡异地回荡。`,
+    秘密宝藏室: `
+    一道机关墙缓缓移开，露出一个被金光笼罩的密室。宝箱上雕刻着
+    奇异符号，箱内的珠玉映出你的倒影。每一件珠宝背后都藏着被
+    遗忘的王朝传承，你能否从中找出开启下一个谜题的线索？`,
+    传送房间: `
+    圆形地面中央的符文阵依稀微亮，空气中弥漫着扭曲的时空气息。
+    你踏上那空灵的符文，周围景象开始扭曲，仿佛下一刻就会被
+    投射到未知的异域。做好迎接未知的准备。`,
+    最终祭坛: `
+    巨大的石柱将穹顶支撑在头顶，祭坛中央悬浮着一颗幽蓝色的古玉。
+    四周壁画描绘着世界毁灭与重生的图景，当你走近，耳畔仿佛听到
+    古老吟唱回荡。此刻，一切谜题的终极秘密都将显现……`
 }
 
-async function move(direction: Direction) {
-  if (!canMove(direction)) {
-    actionMessage.value = '这个方向没有门'
-    setTimeout(() => {
-      actionMessage.value = ''
-    }, 2000)
-    return
-  }
-
-  if (isMoving.value) return
-  isMoving.value = true
-  const playerId = Number(localStorage.getItem('playerId'))
-  try {
-    const res = await playerApi.move(playerId, direction)
-    if (res.data.code === 200) {
-      await loadRoom(true)
-      if (!isTeleportRoom(currentRoom.value.roomName)) {
-        actionMessage.value = `成功移动到 ${currentRoom.value.roomName}`
-      }
-    } else {
-      actionMessage.value = '这个方向没有门'
+// 2. 修改 computed：优先取自定义故事化文本，否则回退到简单提示
+const sceneDesc = computed(() => {
+    const name = currentRoom.roomName
+    const desc = roomDescriptions[name]
+    if (desc) {
+        return `你来到了「${name}」: ` + desc.trim().replace(/\n\s*/g, '')
     }
-  } catch {
-    actionMessage.value = '这个方向没有门'
-  }
-  setTimeout(() => {
-    actionMessage.value = ''
-  }, 2000)
-  isMoving.value = false
+    return `你来到了「${name}」。`
+})
+
+/* ---------- 工具 ---------- */
+
+// 更新后的背包图标映射（与后端 ITEM_POOL 保持一致）
+const iconMap: Record<string, string> = {
+    火把: '🔥',
+    '古书（密码书）': '📖',
+    '炼金药水（小）': '🧪',
+    炼金试剂包: '🧬',
+    钥匙: '🔑',
+    '武器（短剑）': '🗡️',
+    盾牌: '🛡️',
+    '金币（堆）': '💰',
+    宝石: '💎',
+    魔法饼干: '🍪',
+    体力药水: '⚡'
 }
 
+/* ---------- 键盘控制 ---------- */
+function handleKeydown(e: KeyboardEvent) {
+    const tag = document.activeElement?.tagName
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return
+
+    switch (e.key.toLowerCase()) {
+        case 'w':
+            move('up')
+            break
+        case 'a':
+            move('left')
+            break
+        case 's':
+            move('down')
+            break
+        case 'd':
+            move('right')
+            break
+        case 'q':
+            showGameScene.value = !showGameScene.value
+            break
+        case 'r': // ← 新增
+            back()
+            break
+        case 'h': // 新增按键 h 回到初始房间
+            goHome()
+            break
+    }
+}
+onMounted(() => window.addEventListener('keydown', handleKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydown))
+
+/* ---------- 拾取逻辑 ---------- */
+function closeItemPickup() {
+    showItemPickup.value = false
+}
+
+/* ---------- 重写 fetchBackpack，去掉参数，正确赋值 ---------- */
+async function fetchBackpack() {
+    try {
+        const res = await backpackApi.getList()
+        console.log('[fetchBackpack] raw res.data:', res.data)
+
+        // 后端 data 结构可能是 { code, msg, data: {...} }
+        const payload = (res.data.data ?? res.data) as {
+            backpackId: number
+            backpackSize: number
+            itemList: Array<{
+                itemId: number
+                itemName: string
+                itemSize: number
+                itemValue: number
+            }>
+        }
+
+        backpackInfo.backpackId = payload.backpackId
+        backpackInfo.backpackSize = payload.backpackSize
+        backpackInfo.itemList = payload.itemList || []
+        console.log('[fetchBackpack] updated:', backpackInfo.itemList)
+    } catch (e) {
+        console.error('[fetchBackpack] error:', e)
+    }
+}
+
+async function fetchRoom(roomId: number) {
+    try {
+        const res = await roomApi.getInfo(roomId)
+        // —— 先把后端到底返回什么打印一下，帮助下一步调试 ——
+        const d = safeData(res)
+        console.log('[fetchRoom] raw data:', d)
+
+        // —— 映射 roomId 和 roomName ——
+        //    如果后端返回的是 snake_case，就用 d.room_id/d.room_name；
+        //    如果是驼峰，就用 d.roomId/d.roomName。
+        currentRoom.roomId = d.room_id ?? d.roomId ?? null
+        currentRoom.roomName = d.room_name ?? d.roomName ?? ''
+
+        // —— 映射物品列表 （兼容 item_list 或 itemList） ——
+        const rawItems = d.item_list ?? d.itemList ?? d.items ?? []
+        currentRoom.itemList = rawItems.map((i: any) => ({
+            itemId: i.item_id ?? i.itemId,
+            itemName: i.item_name ?? i.itemName,
+            itemSize: i.item_size ?? i.itemSize,
+            itemValue: i.item_value ?? i.itemValue
+        }))
+    } catch (e) {
+        console.error('[fetchRoom] 请求或映射失败：', e)
+    }
+}
+/* ---------- 移动 ---------- */
+const isMoving = ref(false)
+
+/**
+ * 修改后的 move():
+ *  在调用后端移动接口获取 newRoomId 并拉取房间信息后，
+ *  如果"即将进入"的房间是"传送房间"，则直接触发传送逻辑；否则按原流程显示"移动到 XXX"。
+ */
+async function move(direction: 'up' | 'down' | 'left' | 'right') {
+    if (isMoving.value) return
+    isMoving.value = true
+    console.log('[move] 准备移动，方向 =', direction)
+
+    try {
+        // 1. 调用后端移动接口，获取 newRoomId
+        console.log('[move] 调用 playerApi.move() 开始')
+        const resMove = await playerApi.move(direction)
+        console.log('[move] playerApi.move() 返回 res.data =', resMove.data)
+
+        const { code, message, data } = resMove.data
+        if (code !== 200 || message !== 'success') {
+            console.warn(
+                '[move] 后端移动接口返回失败，code =',
+                code,
+                'message =',
+                message
+            )
+            throw new Error(`后端返回失败，code=${code}, message=${message}`)
+        }
+        const newRoomId = (data as any).roomId
+        console.log('[move] 服务器返回新的房间 ID =', newRoomId)
+
+        // 2. 拉取最新玩家信息，更新 player 对象
+        console.log('[move] 调用 playerApi.getInfo() 获取最新玩家信息')
+        const resInfo = await playerApi.getInfo()
+        console.log('[move] playerApi.getInfo() 返回 =', resInfo.data)
+        const p = safeData(resInfo) as {
+            playerId: number
+            playerName: string
+            playerAvatarUrl: string
+            playerScore: number
+            playerRoomId: number
+            playerStamina?: number
+            playerMaxStamina?: number
+        }
+        Object.assign(player, {
+            id: p.playerId,
+            name: p.playerName,
+            avatarUrl: p.playerAvatarUrl,
+            score: p.playerScore,
+            health: p.playerStamina ?? player.health,
+            maxHealth: p.playerMaxStamina ?? player.maxHealth
+        })
+        console.log('[move] 前端 player 更新后 =', { ...player })
+
+        // 3. 更新 player.roomId 并拉取该房间详情
+        player.roomId = newRoomId
+        console.log('[move] 调用 fetchRoom(roomId =', newRoomId, ')')
+        await fetchRoom(newRoomId)
+        console.log('[move] fetchRoom 完成后 currentRoom =', { ...currentRoom })
+
+        //显示"成功移动到 XXX"提示
+        actionMessage.value = `成功移动到 ${currentRoom.roomName}`
+        setTimeout(() => {
+            actionMessage.value = ''
+        }, 2000)
+    } catch (err: any) {
+        console.error('[move] 捕获到错误：', err)
+        actionMessage.value = '这个方向没有门'
+        setTimeout(() => {
+            actionMessage.value = ''
+        }, 2000)
+    } finally {
+        isMoving.value = false
+        console.log('[move] 移动结束，isMoving 置为 false。')
+    }
+    // 在 move() 函数末尾，fetchRoom 后添加：
+    if (currentRoom.roomName === '传送房间') {
+        actionMessage.value = `你已进入了传送房间，稍后将会执行传送`
+        setTimeout(() => (actionMessage.value = ''), 1000)
+        console.log('[move] 移动后检测到进入"传送房间"，开始传送流程')
+        handleTeleport()
+    }
+}
+
+/* ---------- 回到上一个房间 ---------- */
 async function back() {
-  if (isMoving.value) return
-  isMoving.value = true
-  const playerId = Number(localStorage.getItem('playerId'))
-  try {
-    const res = await playerApi.back(playerId)
-    if (res.data.code === 200) {
-      await loadRoom(true)
-      if (!isTeleportRoom(currentRoom.value.roomName)) {
-        actionMessage.value = `你回到了 ${currentRoom.value.roomName}`
-      }
-    } else {
-      actionMessage.value = '已在最初房间，无法再后退'
+    if (isMoving.value) return // 防抖
+    isMoving.value = true
+    console.log('[back] 调用 playerApi.back() …')
+
+    try {
+        // 1. 后端接口
+        const resBack = await playerApi.back()
+        const { code, msg, data } = resBack.data // ← 用 msg
+        console.log('[back] 返回 data =', resBack.data)
+        if (code !== 200) {
+            throw new Error(`返回上一个房间失败：code=${code}, msg=${msg}`)
+        }
+        const newRoomId = data.newRoomId // 后端示例里字段叫 roomId
+        console.log('[back] 新房间 ID =', newRoomId)
+
+        // 2. 刷新玩家信息
+        const resInfo = await playerApi.getInfo()
+        const p = safeData(resInfo)
+        Object.assign(player, {
+            id: p.playerId,
+            name: p.playerName,
+            avatarUrl: p.playerAvatarUrl,
+            score: p.playerScore,
+            health: p.playerStamina ?? player.health,
+            maxHealth: p.playerMaxStamina ?? player.maxHealth
+        })
+        player.roomId = newRoomId
+
+        // 3. 拉取房间
+        await fetchRoom(newRoomId)
+
+        // 4. 提示
+        actionMessage.value = `你回到了 ${currentRoom.roomName}`
+        setTimeout(() => (actionMessage.value = ''), 2000)
+
+        // 5. 如果上一个房间恰好是「传送房间」，继续触发传送
+        if (currentRoom.roomName === '传送房间') {
+            actionMessage.value = '进入传送房间，开始倒计时…'
+            setTimeout(() => (actionMessage.value = ''), 1000)
+            handleTeleport()
+        }
+    } catch (err) {
+        console.error('[back] 出错：', err)
+        actionMessage.value = '已在最初房间，无法再后退'
+        setTimeout(() => (actionMessage.value = ''), 2000)
+    } finally {
+        isMoving.value = false
     }
-  } catch {
-    actionMessage.value = '已在最初房间，无法再后退'
-  }
-  setTimeout(() => {
-    actionMessage.value = ''
-  }, 2000)
-  isMoving.value = false
 }
 
 async function goHome() {
-  if (isMoving.value) return
-  isMoving.value = true
-  const playerId = Number(localStorage.getItem('playerId'))
-  try {
-    const res = await playerApi.home(playerId)
-    if (res.data.code === 200) {
-      await loadRoom(true)
-      if (!isTeleportRoom(currentRoom.value.roomName)) {
-        actionMessage.value = `你已回到 ${currentRoom.value.roomName}`
-      }
-    }
-  } catch {
-    actionMessage.value = '回城失败，请重试'
-  }
-  setTimeout(() => {
-    actionMessage.value = ''
-  }, 2000)
-  isMoving.value = false
-}
+    if (isMoving.value) return
+    isMoving.value = true
+    console.log('[goHome] 调用 playerApi.home() …')
 
-function checkTeleport() {
-  if (isTeleportRoom(currentRoom.value.roomName)) {
-    actionMessage.value = '你已进入传送房间，即将传送…'
-    setTimeout(() => handleTeleport(), 1000)
-  }
-}
-
-async function handleTeleport() {
-  if (isMoving.value) return
-  isMoving.value = true
-  let timeLeft = 3
-  countdown.value = timeLeft
-  actionMessage.value = `传送倒计时：${timeLeft} 秒`
-
-  const timerId = setInterval(() => {
-    timeLeft--
-    if (timeLeft > 0) {
-      countdown.value = timeLeft
-      actionMessage.value = `传送倒计时：${timeLeft} 秒`
-    } else {
-      clearInterval(timerId)
-      countdown.value = null
-      actionMessage.value = '传送中…'
-      doTeleport()
-    }
-  }, 1000)
-}
-
-async function doTeleport() {
-  const playerId = Number(localStorage.getItem('playerId'))
-  try {
-    const res = await playerApi.trans(playerId)
-    if (res.data.code === 200) {
-      await loadRoom(true)
-      if (!isTeleportRoom(currentRoom.value.roomName)) {
-        actionMessage.value = `已传送到 ${currentRoom.value.roomName}`
-      }
-    }
-  } catch {
-    actionMessage.value = '传送失败，请稍后重试'
-  }
-  setTimeout(() => {
-    actionMessage.value = ''
-  }, 2000)
-  isMoving.value = false
-}
-
-async function pickItem(itemId: number) {
-  const playerId = Number(localStorage.getItem('playerId'))
-  if (backpackCount.value >= backpackSize.value) {
-    actionMessage.value = '背包已满，无法拾取'
-    setTimeout(() => {
-      actionMessage.value = ''
-    }, 2000)
-    return
-  }
-  try {
-    await backpackApi.pickItem(playerId, itemId)
-    await loadRoom()
-    await loadBackpack()
-    actionMessage.value = '拾取成功'
-  } catch {
-    actionMessage.value = '拾取失败，请重试'
-  }
-  setTimeout(() => {
-    actionMessage.value = ''
-  }, 2000)
-}
-
-function openBackpack() {
-  backpackRef.value?.open()
-}
-
-function openCrate() {
-  showCrate.value = true
-}
-
-async function pickItemFromCrate(itemId: number) {
-  if (backpackCount.value >= backpackSize.value) {
-    actionMessage.value = '背包已满，无法拾取'
-    setTimeout(() => {
-      actionMessage.value = ''
-    }, 2000)
-    return
-  }
-  const playerId = Number(localStorage.getItem('playerId'))
-  try {
-    await backpackApi.pickItem(playerId, itemId)
-    await loadRoom()
-    await loadBackpack()
-    actionMessage.value = '拾取成功'
-    if (currentRoom.value.itemList.length === 0) showCrate.value = false
-  } catch {
-    actionMessage.value = '拾取失败，请重试'
-  }
-  setTimeout(() => {
-    actionMessage.value = ''
-  }, 2000)
-}
-
-async function takeAllItems() {
-  const playerId = Number(localStorage.getItem('playerId'))
-  const items = [...currentRoom.value.itemList]
-  let picked = 0
-  for (const item of items) {
-    if (backpackCount.value + picked >= backpackSize.value) break
     try {
-      await backpackApi.pickItem(playerId, item.itemId)
-      picked++
-    } catch {
-      break
+        const res = await playerApi.home()
+        const { code, message } = res.data
+        if (code !== 200) {
+            throw new Error(`回到初始房间失败：${message || '未知错误'}`)
+        }
+
+        // 然后调用 getInfo() 获取最新的 roomId
+        const resInfo = await playerApi.getInfo()
+        const p = safeData(resInfo)
+        Object.assign(player, {
+            id: p.playerId,
+            name: p.playerName,
+            avatarUrl: p.playerAvatarUrl,
+            score: p.playerScore,
+            health: p.playerStamina ?? player.health,
+            maxHealth: p.playerMaxStamina ?? player.maxHealth,
+            roomId: p.playerRoomId
+        })
+
+        await fetchRoom(player.roomId)
+
+        actionMessage.value = `你已回到初始房间：${currentRoom.roomName}`
+        setTimeout(() => (actionMessage.value = ''), 2000)
+
+        if (currentRoom.roomName === '传送房间') {
+            actionMessage.value = '进入传送房间，开始倒计时…'
+            setTimeout(() => (actionMessage.value = ''), 1000)
+            handleTeleport()
+        }
+    } catch (err) {
+        console.error('[goHome] 出错：', err)
+        actionMessage.value = '无法回到初始房间，请稍后重试'
+        setTimeout(() => (actionMessage.value = ''), 2000)
+    } finally {
+        isMoving.value = false
     }
-  }
-  await loadRoom()
-  await loadBackpack()
-  actionMessage.value = `共拾取 ${picked} 件物品`
-  if (currentRoom.value.itemList.length === 0) showCrate.value = false
-  setTimeout(() => {
-    actionMessage.value = ''
-  }, 2000)
 }
 
-function handleKeydown(e: KeyboardEvent) {
-  const map: Record<string, Direction> = { w: 'up', s: 'down', a: 'left', d: 'right' }
-  const dir = map[e.key.toLowerCase()]
-  if (dir) move(dir)
-  if (e.key.toLowerCase() === 'r') {
-    back()
-  }
-  if (e.key.toLowerCase() === 'h') {
-    goHome()
-  }
-  if (e.key.toLowerCase() === 'b') {
-    openBackpack()
-  }
+/* ---------- 场景工具 ---------- */
+function getItemPositionStyle(idx: number, total: number) {
+    // ─── 让木箱排在第 0 位 ───
+    const realIdx = idx < 0 ? 0 : idx + 1
+
+    /* ---------- 计算网格 ---------- */
+    const cols = Math.ceil(Math.sqrt(total)) // 列数
+    const rows = Math.ceil(total / cols) // 行数
+    const colNo = realIdx % cols
+    const rowNo = Math.floor(realIdx / cols)
+
+    // 取该格中心的百分比坐标
+    const xPercent = ((colNo + 0.5) / cols) * 100
+    const yPercent = ((rowNo + 0.5) / rows) * 100
+
+    // 80 px = 物品宽/高，减一半让中心点对准格心
+    return {
+        position: 'absolute' as const,
+        left: `calc(${xPercent}% - 40px)`,
+        top: `calc(${yPercent}% - 40px)`,
+        zIndex: 2
+    }
 }
 
-onMounted(() => {
-  loadRoom(true)
-  loadBackpack()
-  window.addEventListener('keydown', handleKeydown)
-  const mq = window.matchMedia('(max-width: 768px)')
-  const onMediaChange = (e: MediaQueryListEvent) => {
-    isMobile.value = e.matches
-  }
-  mq.addEventListener('change', onMediaChange)
-  onUnmounted(() => mq.removeEventListener('change', onMediaChange))
+function getTotalValue() {
+    return backpackInfo.itemList.reduce((t, i) => t + i.itemValue, 0)
+}
+function getCurrentWeight() {
+    return backpackInfo.itemList.reduce((t, i) => t + i.itemSize, 0)
+}
+
+/** 1. 从当前房间拾取单个物品 → 只传数字 itemId → 刷新背包 → 调用 initPlayer() → 日志 + 提示 */
+async function pickupRoomItem(item: {
+    itemId: number
+    itemName: string
+    itemSize: number
+    itemValue: number
+}) {
+    console.log('[pickupRoomItem] 开始捡取场景物品：', item)
+
+    await fetchBackpack()
+
+    // 1. 容量检查
+    const usedWeight = backpackInfo.itemList.reduce(
+        (sum, i) => sum + i.itemSize,
+        0
+    )
+    if (usedWeight + item.itemSize > backpackInfo.backpackSize) {
+        console.warn('[pickupRoomItem] 背包空间不足，无法捡取')
+        actionMessage.value = '背包空间不足！'
+        setTimeout(() => (actionMessage.value = ''), 3000)
+        return
+    }
+
+    try {
+        // 2. 调后端接口：只传数字 itemId
+        console.log(
+            '[pickupRoomItem] 调用 backpackApi.pickItem，itemId =',
+            item.itemId
+        )
+        const resPick = await backpackApi.pickItem(item.itemId)
+        console.log(
+            '[pickupRoomItem] backpackApi.pickItem 返回：',
+            resPick.data
+        )
+
+        // 3. 从场景中移除该物品
+        // currentRoom.itemList = currentRoom.itemList.filter(
+        //     i => i.itemId !== item.itemId
+        // )
+        // console.log('[pickupRoomItem] 已移除 currentRoom.itemList 中该物品')
+        await fetchRoom(player.roomId)
+
+        // 4. 刷新背包列表
+        console.log('[pickupRoomItem] 调用 fetchBackpack() 刷新背包')
+        await fetchBackpack()
+        bus.emit('backpack-updated')
+        console.log('[pickupRoomItem] 已刷新背包')
+
+        // 5. 调用 PlayerInfo.initPlayer() 同步最新玩家信息
+        if (playerInfoRef.value?.initPlayer) {
+            console.log(
+                '[pickupRoomItem] 调用 playerInfoRef.value.initPlayer()'
+            )
+            await playerInfoRef.value.initPlayer()
+            console.log(
+                '[pickupRoomItem] playerInfoRef.value.initPlayer() 已完成'
+            )
+        } else {
+            console.warn(
+                '[pickupRoomItem] playerInfoRef.value.initPlayer 不存在'
+            )
+        }
+
+        // 6. 提示
+        actionMessage.value = `已拾取 ${item.itemName}，玩家信息已同步`
+        setTimeout(() => (actionMessage.value = ''), 3000)
+        console.log('[pickupRoomItem] 操作完成')
+    } catch (err: any) {
+        console.error('[pickupRoomItem] 出错：', err.response || err)
+        actionMessage.value = '拾取失败，请查看控制台'
+        setTimeout(() => (actionMessage.value = ''), 3000)
+    }
+}
+
+/** 2. 从箱子中拾取单件物品 → 只传数字 id → 刷新背包 → 调用 initPlayer() → 日志 + 提示 */
+async function pickupItem(item: { id: number; name: string; value: number; size: number }) {
+    console.log('[pickupItem] 开始从箱子中拾取：', item)
+
+    // 1. 容量检查（基于重量）
+    const usedWeight = backpackInfo.itemList.reduce(
+        (sum, i) => sum + i.itemSize,
+        0
+    )
+    if (usedWeight + item.size > backpackInfo.backpackSize) {
+        console.warn('[pickupItem] 背包空间不足，无法捡取')
+        actionMessage.value = '背包空间不足！'
+        setTimeout(() => (actionMessage.value = ''), 3000)
+        return
+    }
+
+    try {
+        // 2. 调后端接口：只传数字 id
+        console.log('[pickupItem] 调用 backpackApi.pickItem，itemId =', item.id)
+        const resPick = await backpackApi.pickItem(item.id)
+        console.log('[pickupItem] backpackApi.pickItem 返回：', resPick.data)
+
+        // 3. 刷新背包列表
+        console.log('[pickupItem] 调用 fetchBackpack() 刷新背包')
+        await fetchBackpack()
+        bus.emit('backpack-updated')
+        console.log('[pickupItem] 已刷新背包')
+
+        // 4. 从 crateItems 中移除该物品
+        crateItems.value = crateItems.value.filter(c => c.id !== item.id)
+        console.log('[pickupItem] 已从 crateItems 中移除该物品')
+
+        // 4.5. 同步从 currentRoom.itemList 中移除，防止下次打开木箱时幽灵物品重现
+        currentRoom.itemList = currentRoom.itemList.filter(i => i.itemId !== item.id)
+        console.log('[pickupItem] 已从 currentRoom.itemList 中移除该物品')
+
+        // 5. 调用 PlayerInfo.initPlayer() 同步最新玩家信息
+        if (playerInfoRef.value?.initPlayer) {
+            console.log('[pickupItem] 调用 playerInfoRef.value.initPlayer()')
+            await playerInfoRef.value.initPlayer()
+            console.log('[pickupItem] playerInfoRef.value.initPlayer() 已完成')
+        } else {
+            console.warn('[pickupItem] playerInfoRef.value.initPlayer 不存在')
+        }
+
+        // 6. 提示 & 关闭弹窗（如果箱子已空）
+        actionMessage.value = `已拾取 ${item.name}，玩家信息已同步`
+        setTimeout(() => (actionMessage.value = ''), 3000)
+
+        if (crateItems.value.length === 0) {
+            console.log('[pickupItem] crateItems 已空，关闭弹窗')
+            closeItemPickup()
+        }
+        console.log('[pickupItem] 操作完成')
+    } catch (err: any) {
+        console.error('[pickupItem] 出错：', err.response || err)
+        actionMessage.value = '拾取失败，请查看控制台'
+        setTimeout(() => (actionMessage.value = ''), 3000)
+    }
+}
+
+/* ---------- 初始化 ---------- */
+onMounted(async () => {
+    try {
+        // 【新增】先让子组件初始化"玩家信息 + 房间加载"
+        if (
+            playerInfoRef.value &&
+            typeof playerInfoRef.value.initPlayer === 'function'
+        ) {
+            await playerInfoRef.value.initPlayer()
+        } else {
+            console.warn('Game.vue: 找不到 playerInfoRef 或 initPlayer 方法')
+        }
+
+        const res = await playerApi.getInfo()
+        const p = safeData(res)
+        player.id = p.playerId
+        player.name = p.playerName
+        player.avatarUrl = p.playerAvatarUrl
+        player.score = p.playerScore
+        player.roomId = p.playerRoomId
+        bus.emit('player-score-updated', player.score)
+        // …如果还有 health/maxHealth，也同步映射…
+        // 玩家拿到后，马上拉背包
+        await fetchBackpack()
+
+        await fetchRoom(player.roomId)
+    } catch (e) {
+        console.error(e)
+    }
+    bus.on('item-dropped', handleItemDropped)
 })
-onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
+onBeforeUnmount(() => {
+    // —— 新增：解绑"item-dropped"
+    bus.off('item-dropped', handleItemDropped)
+})
+
+provide<FetchRoomFn>('fetchRoom', fetchRoom)
 </script>
 
 <style scoped>
 .game-container {
-  width: 100%;
-  min-height: 100%;
-  display: flex;
-  transition: background 0.6s ease;
-  color: #fff;
-  padding: 24px;
-  box-sizing: border-box;
-  position: relative;
-  overflow: hidden;
-}
-
-.game-layout {
-  flex: 1;
-  display: grid;
-  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr) minmax(220px, 260px);
-  gap: 24px;
-  min-height: 0;
-}
-
-.side-panel,
-.scene-panel {
-  min-height: 0;
-}
-
-.leaderboard-panel {
-  position: sticky;
-  top: 24px;
-  align-self: start;
-  height: calc(100vh - 48px);
-}
-
-.player-shell,
-.scene-shell {
-  position: relative;
-  height: 100%;
-  min-height: 0;
-  border-radius: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background:
-    linear-gradient(180deg, rgba(5, 12, 34, 0.78), rgba(15, 23, 42, 0.62)),
-    radial-gradient(circle at top, rgba(59, 130, 246, 0.16), transparent 48%);
-  backdrop-filter: blur(18px);
-  box-shadow:
-    0 24px 60px rgba(15, 23, 42, 0.42),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-
-.player-shell {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding: 22px;
-}
-
-.panel-heading,
-.scene-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.panel-kicker,
-.scene-kicker {
-  font-size: 12px;
-  line-height: 1;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: rgba(191, 219, 254, 0.76);
-}
-
-.panel-title,
-.scene-room {
-  margin: 0;
-  color: #f8fafc;
-  font-size: 24px;
-  font-weight: 700;
-}
-
-.player-card {
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(15, 23, 42, 0.38);
-  box-shadow: none;
-}
-
-.backpack-trigger {
-  margin-top: auto;
-  width: 100%;
-  height: 44px;
-}
-
-.scene-shell {
-  padding: 24px 28px 28px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.game-scene {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 40px;
-  min-height: 0;
-  position: relative;
-  z-index: 1;
-}
-
-.nav-arrows {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.arrow-row {
-  display: flex;
-  gap: 4px;
-}
-
-.arrow {
-  width: 48px;
-  height: 48px;
-  font-size: 18px;
-  cursor: pointer;
-  border: 1px solid #555;
-  background: #2a2a4a;
-  color: #fff;
-  border-radius: 6px;
-}
-
-.arrow:disabled {
-  cursor: not-allowed;
-  opacity: 0.35;
-}
-
-.room-info {
-  max-width: 420px;
-  padding: 22px 24px;
-  border-radius: 22px;
-  background: rgba(15, 23, 42, 0.34);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-.room-info h3 {
-  margin: 0;
-  font-size: 26px;
-  font-weight: 700;
-  color: #f8fafc;
-}
-
-.room-desc {
-  font-size: 13px;
-  color: rgba(226, 232, 240, 0.78);
-  line-height: 1.6;
-  margin: 8px 0 16px;
-  font-style: italic;
-}
-
-.room-info ul {
-  list-style: none;
-  padding: 0;
-}
-
-.room-info li {
-  margin: 8px 0;
-}
-
-.action-message {
-  position: fixed;
-  bottom: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 10px 24px;
-  background: rgba(0, 0, 0, 0.75);
-  color: #fff;
-  border-radius: 8px;
-  font-size: 14px;
-  z-index: 100;
-  pointer-events: none;
-}
-
-.msg-fade-enter-active,
-.msg-fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-.msg-fade-enter-from,
-.msg-fade-leave-to {
-  opacity: 0;
-}
-
-.scene-objects {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 16px;
-}
-
-.room-item-panel {
-  margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.room-item-panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #e2e8f0;
-}
-
-.room-item-count {
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: rgba(79, 70, 229, 0.18);
-  color: #c4b5fd;
-  font-size: 12px;
-}
-
-.room-item-empty {
-  padding: 14px 12px;
-  border-radius: 14px;
-  background: rgba(15, 23, 42, 0.28);
-  color: rgba(226, 232, 240, 0.66);
-  font-size: 13px;
-}
-
-.room-item-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.room-item-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  min-width: 0;
-  flex-wrap: wrap;
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: rgba(15, 23, 42, 0.26);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.room-item-summary {
-  min-width: 0;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.room-item-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-}
-
-.room-item-name {
-  min-width: 0;
-  font-size: 13px;
-  font-weight: 600;
-  color: #f8fafc;
-}
-
-.room-item-meta {
-  font-size: 12px;
-  color: rgba(191, 219, 254, 0.8);
-  white-space: nowrap;
-}
-
-.room-item-pick {
-  flex-shrink: 0;
-}
-
-.scene-object {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.scene-object:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
-}
-
-.object-icon {
-  font-size: 28px;
-}
-
-.object-label {
-  font-size: 12px;
-  color: #ccc;
-}
-
-.crate {
-  border-color: rgba(255, 200, 100, 0.4);
-  background: rgba(255, 200, 100, 0.1);
-}
-
-.crate:hover {
-  border-color: rgba(255, 200, 100, 0.6);
-  background: rgba(255, 200, 100, 0.2);
-}
-
-.crate-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-}
-
-.crate-modal {
-  background: #2a2a3e;
-  border: 1px solid #444;
-  border-radius: 12px;
-  width: 420px;
-  max-height: 70vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.crate-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid #444;
-}
-
-.crate-header h3 {
-  margin: 0;
-  font-size: 18px;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  color: #aaa;
-  font-size: 20px;
-  cursor: pointer;
-}
-
-.close-btn:hover {
-  color: #fff;
-}
-
-.crate-items {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px 20px;
-}
-
-.crate-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.crate-item:hover:not(.disabled) {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.crate-item.disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.crate-item-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.crate-item-name {
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.crate-item-meta {
-  font-size: 12px;
-  color: #999;
-}
-
-.crate-empty {
-  text-align: center;
-  color: #666;
-  padding: 24px;
-}
-
-.crate-footer {
-  padding: 16px 20px;
-  border-top: 1px solid #444;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.inventory-full-warning {
-  color: #f56c6c;
-  font-size: 13px;
-  margin: 0;
-}
-
-@media (max-width: 1120px) {
-  .game-layout {
-    grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
-  }
-
-  .leaderboard-panel {
-    position: static;
-    height: auto;
-    grid-column: 1 / -1;
-  }
-}
-
-/* 移动端适配 */
-@media (max-width: 768px) {
-  .game-container {
-    padding: 10px;
-  }
-
-  .game-layout {
-    grid-template-columns: 1fr;
-    gap: 14px;
-  }
-
-  .player-shell,
-  .scene-shell {
-    border-radius: 22px;
-  }
-
-  .scene-shell {
-    padding: 18px;
-  }
-
-  .game-scene {
-    flex-direction: column;
-    justify-content: flex-start;
-    gap: 20px;
-  }
-
-  .nav-arrows {
-    flex-direction: row;
-    gap: 8px;
-  }
-
-  .arrow-row {
-    gap: 8px;
-  }
-
-  .arrow {
-    width: 40px;
-    height: 40px;
-    font-size: 16px;
-  }
-
-  .room-info {
-    max-width: 100%;
-    text-align: center;
-    padding: 18px;
-  }
-
-  .scene-objects {
-    justify-content: center;
-  }
-
-  .room-item-row {
-    align-items: flex-start;
-  }
-
-  .room-item-pick {
     width: 100%;
-  }
+    height: 100vh;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+    color: #fff;
+    font-family: 'Arial', sans-serif;
+    overflow: hidden;
+    position: relative;
+}
 
-  .crate-modal {
-    width: 90vw;
-    max-height: 60vh;
-  }
+/* ---------- 场景 ---------- */
+.game-scene {
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 45%;
+    height: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+/* ---------- 物体 ---------- */
+.scene-objects {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+.scene-object {
+    position: absolute;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.scene-object:hover,
+.scene-object.highlighted {
+    transform: translateY(-5px);
+}
+.wooden-crate,
+.room-item {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+}
+.wooden-crate {
+    background: linear-gradient(135deg, #a1887f, #795548);
+    border: 2px solid #5d4037;
+}
+.room-item {
+    background: linear-gradient(135deg, #d7ccc8, #bcaaa4);
+    border: 2px solid #a1887f;
+    box-shadow: 0 4px 16px rgba(161, 136, 127, 0.2);
+}
+.room-item.highlighted {
+    box-shadow: 0 0 16px 4px rgba(180, 160, 140, 0.4);
+    transform: translateY(-6px) scale(1.08);
+    border-color: #bcaaa4;
+}
+.object-icon {
+    font-size: 32px;
+}
+
+/* ---------- 物品提示 ---------- */
+.item-tooltip {
+    position: absolute;
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(62, 39, 35, 0.95);
+    color: #efebe9;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    pointer-events: none;
+    z-index: 10;
+    text-align: center;
+    min-width: 100px;
+    border: 1px solid rgba(180, 160, 140, 0.3);
+}
+.item-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -8px;
+    border-width: 8px;
+    border-style: solid;
+    border-color: rgba(62, 39, 35, 0.95) transparent transparent transparent;
+}
+
+/* ---------- 拾取弹窗 ---------- */
+.item-pickup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(62, 39, 35, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+.item-pickup-modal {
+    background: linear-gradient(135deg, #efebe9, #d7ccc8);
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    border: 2px solid rgba(180, 160, 140, 0.3);
+    animation: slideUp 0.3s ease;
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    border-bottom: 2px solid rgba(180, 160, 140, 0.3);
+    padding-bottom: 15px;
+}
+.modal-header h3 {
+    margin: 0;
+    font-size: 24px;
+    color: #4e342e;
+}
+.close-btn {
+    background: none;
+    border: none;
+    color: #8d6e63;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+.close-btn:hover {
+    color: #4e342e;
+    background: rgba(180, 160, 140, 0.15);
+}
+.items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+    margin-bottom: 25px;
+}
+.pickup-item {
+    background: linear-gradient(135deg, #d7ccc8, #bcaaa4);
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid rgba(180, 160, 140, 0.2);
+}
+.pickup-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    border-color: rgba(180, 160, 140, 0.5);
+}
+.pickup-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.pickup-item.disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+.pickup-item-icon {
+    font-size: 36px;
+    margin-bottom: 10px;
+}
+.pickup-item-name {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #4e342e;
+}
+.pickup-item-value {
+    font-size: 14px;
+    color: #6d4c41;
+}
+.modal-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    border-top: 2px solid rgba(180, 160, 140, 0.3);
+    padding-top: 20px;
+}
+.inventory-full-warning {
+    color: #e53935;
+    font-weight: bold;
+}
+
+/* ---------- 文字提示 ---------- */
+.scene-description {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(62, 39, 35, 0.85);
+    padding: 20px 40px;
+    border-radius: 25px;
+    max-width: 800px;
+    font-size: 18px;
+    border: 2px solid rgba(180, 160, 140, 0.3);
+}
+.action-message {
+    position: absolute;
+    top: 120px;
+    right: 20px;
+    background: rgba(141, 110, 99, 0.9);
+    color: #fff;
+    padding: 15px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    animation: slideIn 0.3s ease;
+    max-width: 300px;
+    z-index: 999;
+}
+
+/* ---------- 动画 ---------- */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 768px) {
+    .game-scene {
+        height: 25%;
+        position: absolute;
+        top: 60%;
+    }
+    .scene-description {
+        bottom: 20px;
+        font-size: 16px;
+        padding: 15px 25px;
+    }
+    .item-pickup-modal {
+        padding: 20px;
+        margin: 10px;
+    }
+    .items-grid {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 15px;
+    }
 }
 </style>
