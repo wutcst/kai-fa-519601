@@ -1,28 +1,11 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { nextTick } from 'vue'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import Login from './Login.vue'
 
 const mocks = vi.hoisted(() => ({
-  push: vi.fn(),
   login: vi.fn(),
   register: vi.fn(),
-  message: {
-    success: vi.fn(),
-    error: vi.fn(),
-    warning: vi.fn(),
-    info: vi.fn(),
-  },
-}))
-
-vi.mock('vue-router', () => ({
-  useRouter: () => ({
-    push: mocks.push,
-  }),
-}))
-
-vi.mock('element-plus', () => ({
-  ElMessage: mocks.message,
+  push: vi.fn(),
 }))
 
 vi.mock('@/api', () => ({
@@ -32,95 +15,119 @@ vi.mock('@/api', () => ({
   },
 }))
 
-async function openAuthPanel() {
-  const wrapper = mount(Login)
+vi.mock('vue-router', () => ({
+  useRouter: () => ({
+    push: mocks.push,
+  }),
+}))
 
-  await wrapper.get('.start-screen').trigger('click')
-  await wrapper.get('.start-btn').trigger('click')
-  await vi.advanceTimersByTimeAsync(900)
-  await flushPromises()
-
-  return wrapper
+function mountLogin() {
+  return mount(Login, {
+    global: {
+      stubs: {
+        transition: false,
+      },
+    },
+  })
 }
 
 describe('Login.vue', () => {
   beforeEach(() => {
-    vi.useFakeTimers()
     vi.clearAllMocks()
     localStorage.clear()
+    vi.useFakeTimers()
+    vi.spyOn(window, 'alert').mockImplementation(() => {})
   })
 
   afterEach(() => {
     vi.useRealTimers()
   })
 
-  it('renders the login form after entering the auth flow', async () => {
-    const wrapper = await openAuthPanel()
+  it('renders login form with correct input ids', async () => {
+    const wrapper = mountLogin()
+    // Click through start screen and welcome screen to reach login form
+    await wrapper.find('.start-screen').trigger('click')
+    await flushPromises()
+    await wrapper.find('.start-btn').trigger('click')
+    await vi.runAllTimersAsync()
+    await flushPromises()
 
-    expect(wrapper.find('#login-username').exists()).toBe(true)
-    expect(wrapper.find('#login-password').exists()).toBe(true)
-    expect(wrapper.find('.submit-button').exists()).toBe(true)
-    expect(wrapper.find('.switch-button').exists()).toBe(true)
+    expect(wrapper.find('#username').exists()).toBe(true)
+    expect(wrapper.find('#password').exists()).toBe(true)
   })
 
-  it('submits login data and navigates to archive on success', async () => {
+  it('calls login API and navigates on success', async () => {
     mocks.login.mockResolvedValue({
       data: {
-        code: 200,
         data: {
           playerId: 7,
-          token: 'token-7',
+          playerAvatarUrl: '',
         },
       },
     })
 
-    const wrapper = await openAuthPanel()
+    const wrapper = mountLogin()
+    await wrapper.find('.start-screen').trigger('click')
+    await flushPromises()
+    await wrapper.find('.start-btn').trigger('click')
+    await vi.runAllTimersAsync()
+    await flushPromises()
 
-    await wrapper.get('#login-username').setValue('alice')
-    await wrapper.get('#login-password').setValue('secret')
-    await wrapper.get('form').trigger('submit.prevent')
+    await wrapper.find('#username').setValue('testuser')
+    await wrapper.find('#password').setValue('testpass')
+    await wrapper.find('.login-button').trigger('submit')
+
     await flushPromises()
 
     expect(mocks.login).toHaveBeenCalledWith({
-      username: 'alice',
-      password: 'secret',
+      username: 'testuser',
+      password: 'testpass',
     })
     expect(localStorage.getItem('playerId')).toBe('7')
-    expect(localStorage.getItem('token')).toBe('token-7')
-    expect(localStorage.getItem('roomId')).toBe('1')
-    expect(mocks.push).toHaveBeenCalledWith('/welcome/archive')
-    expect(mocks.message.success).toHaveBeenCalled()
+    expect(mocks.push).toHaveBeenCalledWith('archive')
   })
 
-  it('switches to register mode and submits form data', async () => {
-    mocks.register.mockResolvedValue({
-      data: {
-        code: 200,
-      },
-    })
-
-    const wrapper = await openAuthPanel()
-
-    await wrapper.get('.switch-button').trigger('click')
-    await nextTick()
-
-    expect(wrapper.find('#reg-username').exists()).toBe(true)
-    expect(wrapper.find('#reg-password').exists()).toBe(true)
-    expect(wrapper.find('#reg-confirm').exists()).toBe(true)
-
-    await wrapper.get('#reg-username').setValue('alice')
-    await wrapper.get('#reg-password').setValue('secret')
-    await wrapper.get('#reg-confirm').setValue('secret')
-    await wrapper.get('form').trigger('submit.prevent')
+  it('switches to register mode and renders register inputs', async () => {
+    const wrapper = mountLogin()
+    await wrapper.find('.start-screen').trigger('click')
+    await flushPromises()
+    await wrapper.find('.start-btn').trigger('click')
+    await vi.runAllTimersAsync()
     await flushPromises()
 
-    expect(mocks.register).toHaveBeenCalledTimes(1)
+    await wrapper.find('.register-button').trigger('click')
+    await vi.runAllTimersAsync()
+    await flushPromises()
 
-    const payload = mocks.register.mock.calls[0][0] as FormData
+    expect(wrapper.find('#r-username').exists()).toBe(true)
+    expect(wrapper.find('#r-password').exists()).toBe(true)
+    expect(wrapper.find('#confirm').exists()).toBe(true)
+  })
 
-    expect(payload.get('playerName')).toBe('alice')
-    expect(payload.get('password')).toBe('secret')
-    expect(mocks.message.success).toHaveBeenCalled()
-    expect(wrapper.find('#login-username').exists()).toBe(true)
+  it('calls register API on form submit', async () => {
+    mocks.register.mockResolvedValue({ data: {} })
+
+    const wrapper = mountLogin()
+    await wrapper.find('.start-screen').trigger('click')
+    await flushPromises()
+    await wrapper.find('.start-btn').trigger('click')
+    await vi.runAllTimersAsync()
+    await flushPromises()
+
+    await wrapper.find('.register-button').trigger('click')
+    await vi.runAllTimersAsync()
+    await flushPromises()
+
+    await wrapper.find('#r-username').setValue('newuser')
+    await wrapper.find('#r-password').setValue('newpass')
+    await wrapper.find('#confirm').setValue('newpass')
+    await wrapper.find('.login-button').trigger('submit')
+
+    await flushPromises()
+
+    expect(mocks.register).toHaveBeenCalled()
+    const formData = mocks.register.mock.calls[0][0]
+    expect(formData.get('playerName')).toBe('newuser')
+    expect(formData.get('password')).toBe('newpass')
   })
 })

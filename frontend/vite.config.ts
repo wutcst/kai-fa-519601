@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
@@ -61,5 +62,15 @@ export default defineConfig({
 
   esbuild: {
     drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
+  },
+
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/test-setup.ts'],
+    exclude: [
+      '**/old_frontend/**',
+      '**/node_modules/**',
+    ],
   },
 })
