@@ -1,3 +1,2 @@
-const loginBg = '/mock-login-bg.png'
-
-export default loginBg
+// Stub for images/login-bg.png in test environment
+export default ''
