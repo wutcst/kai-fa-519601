@@ -25,7 +25,7 @@
             <div v-if="showWelcome" key="welcome" class="welcome-screen">
                 <div class="welcome-content">
                     <img
-                        src="images/logo.png"
+                        src="/images/logo.png"
                         class="welcome-logo"
                         alt="Game Logo"
                     />
@@ -76,7 +76,7 @@
                 <!-- Left visual panel -->
                 <div v-show="!isMobile" class="login-image">
                     <img
-                        src="images/login-bg.png"
+                        src="/images/login-bg.png"
                         class="login-bg"
                         alt="login splash"
                     />
@@ -86,7 +86,7 @@
                 <transition name="fade-slide" mode="out-in">
                     <!-- ---------- LOGIN ---------- -->
                     <div v-if="!isRegisterMode" key="login" class="login-form">
-                        <img src="images/logo.png" class="logo" alt="" />
+                        <img src="/images/logo.png" class="logo" alt="" />
                         <h2 class="form-title">登录游戏</h2>
 
                         <form @submit.prevent="handleLogin">
@@ -213,7 +213,7 @@ import {
     computed
 } from 'vue'
 import { useRouter } from 'vue-router'
-import { playerApi } from '@/api/index.js'
+import { playerApi } from '@/api'
 
 const showStartScreen = ref(true)
 const showWelcome = ref(false)
@@ -381,12 +381,14 @@ async function handleRegister() {
         const form = new FormData()
         form.append('playerName', registerData.username)
         form.append('password', registerData.password)
-        form.append('avatar', avatarFile.value)
+        if (avatarFile.value) {
+            form.append('avatar', avatarFile.value)
+        }
 
         console.log('Sending registration data:', {
             playerName: registerData.username,
-            avatarFile: avatarFile.value.name,
-            fileSize: (avatarFile.value.size / 1024).toFixed(2) + 'KB'
+            avatarFile: avatarFile.value?.name ?? 'none',
+            fileSize: avatarFile.value ? (avatarFile.value.size / 1024).toFixed(2) + 'KB' : 'none'
         })
 
         await playerApi.register(form)
