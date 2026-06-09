@@ -1,8 +1,10 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
 
 export default defineConfig({
+  base: '/kai-fa-519601/',
   plugins: [vue()],
 
   resolve: {
@@ -35,7 +37,7 @@ export default defineConfig({
   },
 
   build: {
-    outDir: 'dist',
+    outDir: '../docs',
     assetsDir: 'assets',
     sourcemap: false,
     chunkSizeWarningLimit: 1500,
@@ -61,5 +63,15 @@ export default defineConfig({
 
   esbuild: {
     drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
+  },
+
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/test-setup.ts'],
+    exclude: [
+      '**/old_frontend/**',
+      '**/node_modules/**',
+    ],
   },
 })

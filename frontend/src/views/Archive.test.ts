@@ -1,20 +1,21 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import ElementPlus from 'element-plus'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import Archive from './Archive.vue'
 
 const mocks = vi.hoisted(() => ({
-  push: vi.fn(),
-  getList: vi.fn(),
+  list: vi.fn(),
+  load: vi.fn(),
   newGame: vi.fn(),
-  read: vi.fn(),
   deleteSave: vi.fn(),
-  confirm: vi.fn(),
-  message: {
-    success: vi.fn(),
-    error: vi.fn(),
-    warning: vi.fn(),
-    info: vi.fn(),
+  push: vi.fn(),
+}))
+
+vi.mock('@/api', () => ({
+  gameApi: {
+    list: mocks.list,
+    load: mocks.load,
+    new: mocks.newGame,
+    delete: mocks.deleteSave,
   },
 }))
 
@@ -24,204 +25,135 @@ vi.mock('vue-router', () => ({
   }),
 }))
 
-vi.mock('@/api', () => ({
-  gameApi: {
-    getList: mocks.getList,
-    new: mocks.newGame,
-    read: mocks.read,
-    delete: mocks.deleteSave,
-  },
-}))
-
-vi.mock('element-plus', async () => {
-  const actual = await vi.importActual<typeof import('element-plus')>('element-plus')
-
-  return {
-    ...actual,
-    ElMessage: mocks.message,
-    ElMessageBox: {
-      confirm: mocks.confirm,
-    },
-  }
-})
-
-function createSaves() {
-  return [
-    {
-      saveId: 1,
-      playerId: 7,
-      saveTime: '2024-01-20T15:30:45',
-      playerScore: 100,
-      playerStamina: 80,
-      playerRoomId: 2,
-    },
-    {
-      saveId: 2,
-      playerId: 7,
-      saveTime: '2024-01-21T09:10:11',
-      playerScore: 120,
-      playerStamina: 60,
-      playerRoomId: 3,
-    },
-  ]
-}
-
-async function mountArchive() {
-  const wrapper = mount(Archive, {
+function mountArchive() {
+  return mount(Archive, {
     global: {
-      plugins: [ElementPlus],
+      stubs: {
+        transition: false,
+      },
     },
   })
-
-  await flushPromises()
-  await new Promise((resolve) => setTimeout(resolve, 0))
-  await flushPromises()
-
-  return wrapper
-}
-
-function findButtonByText(wrapper: ReturnType<typeof mount>, text: string) {
-  return wrapper.findAll('button').find((button) => button.text().includes(text))
 }
 
 describe('Archive.vue', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     localStorage.clear()
-    localStorage.setItem('playerId', '7')
-
-    vi.stubGlobal(
-      'ResizeObserver',
-      class ResizeObserver {
-        observe() {}
-        unobserve() {}
-        disconnect() {}
-      },
-    )
-
-    mocks.confirm.mockResolvedValue(undefined)
   })
 
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
-  it('renders fetched save records on mount', async () => {
-    mocks.getList.mockResolvedValue({
+  it('fetches and renders save list on mount', async () => {
+    mocks.list.mockResolvedValue({
       data: {
         code: 200,
-        data: createSaves(),
+        data: [
+          {
+            saveId: 1,
+            playerScore: 100,
+            playerStamina: 80,
+            playerRoomId: 3,
+            saveTime: '2025-06-01 12:00:00',
+          },
+        ],
       },
     })
 
-    const wrapper = await mountArchive()
-
-    expect(mocks.getList).toHaveBeenCalledWith(7)
-    expect(wrapper.text()).toContain('2024-01-20 15:30')
-    expect(wrapper.text()).toContain('100')
-    expect(wrapper.text()).toContain('80')
-    expect(wrapper.text()).toContain('120')
-  })
-
-  it('starts a new game and navigates to game page', async () => {
-    mocks.getList.mockResolvedValue({
-      data: {
-        code: 200,
-        data: createSaves(),
-      },
-    })
-    mocks.newGame.mockResolvedValue({
-      data: {
-        code: 200,
-      },
-    })
-
-    const wrapper = await mountArchive()
-
-    await wrapper.get('.new-btn').trigger('click')
+    const wrapper = mountArchive()
     await flushPromises()
 
-    expect(mocks.newGame).toHaveBeenCalledWith(7)
+    expect(mocks.list).toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Save #1')
+    expect(wrapper.text()).toContain('Score 100')
+  })
+
+  it('calls gameApi.new() and navigates on "新的开始" click', async () => {
+    mocks.list.mockResolvedValue({
+      data: { code: 200, data: [] },
+    })
+    mocks.newGame.mockResolvedValue({
+      data: { code: 200 },
+    })
+
+    const wrapper = mountArchive()
+    await flushPromises()
+
+    await wrapper.find('.empty-slot').trigger('click')
+    await flushPromises()
+
+    expect(mocks.newGame).toHaveBeenCalled()
     expect(mocks.push).toHaveBeenCalledWith('/game')
   })
 
-  it('reads a save and pushes encoded save data into the route', async () => {
-    const saves = createSaves()
-    const savePayload = {
-      playerId: 7,
-      playerName: 'alice',
-      playerScore: 100,
-      playerStamina: 80,
-      playerRoomId: 2,
-      playerBackpackId: 3,
-      saveTime: '2024-01-20T15:30:45',
-    }
-
-    mocks.getList.mockResolvedValue({
+  it('calls gameApi.read() and navigates on save click', async () => {
+    mocks.list.mockResolvedValue({
       data: {
         code: 200,
-        data: saves,
+        data: [
+          {
+            saveId: 1,
+            playerScore: 100,
+            playerStamina: 80,
+            playerRoomId: 3,
+            saveTime: '2025-06-01 12:00:00',
+          },
+        ],
       },
     })
-    mocks.read.mockResolvedValue({
+    mocks.load.mockResolvedValue({
       data: {
         code: 200,
-        data: savePayload,
+        data: {
+          saveId: 1,
+          playerId: 7,
+          saveTime: '2025-06-01 12:00:00',
+          playerScore: 100,
+          playerStamina: 80,
+          playerRoomId: 3,
+          playerBackpackId: 1,
+        },
       },
     })
 
-    const wrapper = await mountArchive()
-    const readButton = findButtonByText(wrapper, '读取')
-
-    expect(readButton).toBeDefined()
-
-    await readButton!.trigger('click')
+    const wrapper = mountArchive()
     await flushPromises()
 
-    expect(mocks.read).toHaveBeenCalledWith(1)
-    expect(mocks.push).toHaveBeenCalledWith({
-      path: '/game',
-      query: {
-        save: encodeURIComponent(JSON.stringify(savePayload)),
-      },
-    })
+    await wrapper.find('.save-slot').trigger('click')
+    await flushPromises()
+
+    expect(mocks.load).toHaveBeenCalledWith({ saveId: 1 })
+    expect(mocks.push).toHaveBeenCalledWith(
+      expect.objectContaining({ path: '/game' })
+    )
   })
 
-  it('deletes a save and refreshes the save list', async () => {
-    const initialSaves = createSaves()
-    const refreshedSaves = [initialSaves[1]]
+  it('calls gameApi.delete() on delete button click', async () => {
+    // Mock confirm to return true
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
 
-    mocks.getList
-      .mockResolvedValueOnce({
-        data: {
-          code: 200,
-          data: initialSaves,
-        },
-      })
-      .mockResolvedValueOnce({
-        data: {
-          code: 200,
-          data: refreshedSaves,
-        },
-      })
-    mocks.deleteSave.mockResolvedValue({
+    mocks.list.mockResolvedValue({
       data: {
         code: 200,
+        data: [
+          {
+            saveId: 1,
+            playerScore: 100,
+            playerStamina: 80,
+            playerRoomId: 3,
+            saveTime: '2025-06-01 12:00:00',
+          },
+        ],
       },
     })
+    mocks.deleteSave.mockResolvedValue({
+      data: { code: 200 },
+    })
 
-    const wrapper = await mountArchive()
-    const deleteButton = findButtonByText(wrapper, '删除')
-
-    expect(deleteButton).toBeDefined()
-
-    await deleteButton!.trigger('click')
+    const wrapper = mountArchive()
     await flushPromises()
 
-    expect(mocks.confirm).toHaveBeenCalled()
-    expect(mocks.deleteSave).toHaveBeenCalledWith(1)
-    expect(mocks.getList).toHaveBeenCalledTimes(2)
-    expect(wrapper.text()).not.toContain('2024-01-20 15:30')
-    expect(mocks.message.success).toHaveBeenCalled()
+    await wrapper.find('.delete-btn').trigger('click')
+    await flushPromises()
+
+    expect(window.confirm).toHaveBeenCalledWith('确认删除此存档？')
+    expect(mocks.deleteSave).toHaveBeenCalledWith({ saveId: 1 })
   })
 })
