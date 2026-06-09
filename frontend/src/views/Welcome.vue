@@ -242,11 +242,12 @@ const stopMusic = () => {
 }
 
 /* -------------------- Slideshow logic -------------------- */
+const baseUrl = import.meta.env.BASE_URL
 const images = [
-    '/images/image-1.jpg',
-    '/images/image-2.jpg',
-    '/images/image-3.jpg',
-    '/images/image-4.png'
+    `${baseUrl}images/image-1.jpg`,
+    `${baseUrl}images/image-2.jpg`,
+    `${baseUrl}images/image-3.jpg`,
+    `${baseUrl}images/image-4.png`
 ]
 const currentSlide = ref(0)
 let slideTimer
