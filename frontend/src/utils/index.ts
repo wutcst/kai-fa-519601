@@ -9,8 +9,8 @@
  * @returns 提取后的数据对象，若无数据则返回 null
  */
 export function safeData(res: any) {
-    if (!res || !res.data) return null
+  if (!res || !res.data) return null
 
-    // 优先获取 res.data.data，若无则取 res.data
-    return res.data.data ?? res.data
+  // 优先获取 res.data.data，若无则取 res.data
+  return res.data.data ?? res.data
 }

@@ -8,11 +8,11 @@ import mitt from 'mitt'
  * 限制事件类型以提升类型安全性
  */
 type Events = {
-    /**
-     * 切换场景显示事件
-     * true 表示显示场景，false 表示隐藏
-     */
-    'toggle-scene': boolean
+  /**
+   * 切换场景显示事件
+   * true 表示显示场景，false 表示隐藏
+   */
+  'toggle-scene': boolean
 }
 
 /**

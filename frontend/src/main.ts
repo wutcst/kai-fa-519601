@@ -27,21 +27,21 @@ const app = createApp(App)
 app.config.globalProperties.$message = ElMessage
 
 // 安装插件、注册全局组件、启用路由
-app.use(ElementPlus)
-    .use(PrimeVue, { ripple: true }) // PrimeVue 使用水波纹效果
-    .component('Calendar', Calendar) // 注册 PrimeVue 日历组件
-    .use(router) // 启用 vue-router
-    .mount('#app') // 挂载到 DOM 上
+app
+  .use(ElementPlus)
+  .use(PrimeVue, { ripple: true }) // PrimeVue 使用水波纹效果
+  .component('Calendar', Calendar) // 注册 PrimeVue 日历组件
+  .use(router) // 启用 vue-router
+  .mount('#app') // 挂载到 DOM 上
 
 /**
  * 修复某些环境下 ResizeObserver 错误导致控制台污染的问题
  * 可选项：预防第三方组件触发的 ResizeObserver loop limit 报错
  */
 window.addEventListener(
-    'error',
-    e => {
-        if (e.message.toLowerCase().includes('resizeobserver'))
-            e.preventDefault()
-    },
-    { capture: true }
+  'error',
+  (e) => {
+    if (e.message.toLowerCase().includes('resizeobserver')) e.preventDefault()
+  },
+  { capture: true },
 )

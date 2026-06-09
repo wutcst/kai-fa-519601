@@ -9,6 +9,16 @@ const tsRules = {
   '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
 }
 
+// 关闭与 Prettier 冲突的 Vue 格式规则
+const vuePrettierCompatRules = {
+  'vue/html-indent': 'off',
+  'vue/max-attributes-per-line': 'off',
+  'vue/singleline-html-element-content-newline': 'off',
+  'vue/html-self-closing': 'off',
+  'vue/html-closing-bracket-newline': 'off',
+  'vue/attributes-order': 'off',
+}
+
 export default [
   { ignores: ['dist', 'node_modules', '*.config.*'] },
 
@@ -42,6 +52,16 @@ export default [
     plugins: {
       '@typescript-eslint': tsEslintPlugin,
     },
-    rules: tsRules,
+    rules: {
+      ...tsRules,
+      ...vuePrettierCompatRules,
+    },
+  },
+
+  {
+    files: ['**/*.test.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
   },
 ]

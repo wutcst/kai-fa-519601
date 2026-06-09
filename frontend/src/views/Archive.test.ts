@@ -120,9 +120,7 @@ describe('Archive.vue', () => {
     await flushPromises()
 
     expect(mocks.load).toHaveBeenCalledWith({ saveId: 1 })
-    expect(mocks.push).toHaveBeenCalledWith(
-      expect.objectContaining({ path: '/game' })
-    )
+    expect(mocks.push).toHaveBeenCalledWith(expect.objectContaining({ path: '/game' }))
   })
 
   it('calls gameApi.delete() on delete button click', async () => {

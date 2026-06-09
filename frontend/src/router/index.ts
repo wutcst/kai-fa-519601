@@ -11,40 +11,40 @@ import { createRouter, createWebHashHistory } from 'vue-router'
  * 包括重定向规则、嵌套路由、懒加载组件等
  */
 const routes = [
-    // 根路径重定向至登录页
-    { path: '/', redirect: '/welcome/login' },
+  // 根路径重定向至登录页
+  { path: '/', redirect: '/welcome/login' },
 
-    {
-        path: '/welcome',
-        component: () => import('@/views/Welcome.vue'),
-        children: [
-            // 访问 /welcome 默认跳转至 login 页面
-            { path: '', redirect: 'login' },
+  {
+    path: '/welcome',
+    component: () => import('@/views/Welcome.vue'),
+    children: [
+      // 访问 /welcome 默认跳转至 login 页面
+      { path: '', redirect: 'login' },
 
-            {
-                path: 'login',
-                name: 'Login',
-                component: () => import('@/views/login.vue') // 登录页
-            },
-            {
-                path: 'archive',
-                name: 'Archive',
-                component: () => import('@/views/Archive.vue') // 档案页
-            }
-        ]
-    },
+      {
+        path: 'login',
+        name: 'Login',
+        component: () => import('@/views/login.vue'), // 登录页
+      },
+      {
+        path: 'archive',
+        name: 'Archive',
+        component: () => import('@/views/Archive.vue'), // 档案页
+      },
+    ],
+  },
 
-    {
-        path: '/game',
-        name: 'Game',
-        component: () => import('@/views/Game.vue') // 游戏主页面
-    }
+  {
+    path: '/game',
+    name: 'Game',
+    component: () => import('@/views/Game.vue'), // 游戏主页面
+  },
 ]
 
 /**
  * 创建并导出 Vue Router 实例
  */
 export default createRouter({
-    history: createWebHashHistory(), // 使用 hash 路由
-    routes
+  history: createWebHashHistory(), // 使用 hash 路由
+  routes,
 })

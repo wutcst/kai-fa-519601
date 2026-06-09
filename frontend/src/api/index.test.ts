@@ -27,13 +27,7 @@ vi.mock('axios', () => ({ default: mocks.mockAxios }))
 // ---------------------------------------------------------------------------
 // Import module under test
 // ---------------------------------------------------------------------------
-import {
-  default as api,
-  playerApi,
-  roomApi,
-  backpackApi,
-  gameApi,
-} from './index'
+import { default as api, playerApi, roomApi, backpackApi, gameApi } from './index'
 
 // ---------------------------------------------------------------------------
 // Capture interceptors immediately (before any clearAllMocks)
@@ -154,9 +148,7 @@ describe('api/index.ts', () => {
 
       const response = { data: { code: 401 } }
 
-      await expect(responseSuccessInterceptor(response)).rejects.toThrow(
-        'auth expired',
-      )
+      await expect(responseSuccessInterceptor(response)).rejects.toThrow('auth expired')
 
       expect(localStorage.getItem('token')).toBeNull()
       expect(localStorage.getItem('playerId')).toBeNull()
@@ -169,9 +161,7 @@ describe('api/index.ts', () => {
 
       const response = { data: { code: 200, message: 'auth expired' } }
 
-      await expect(responseSuccessInterceptor(response)).rejects.toThrow(
-        'auth expired',
-      )
+      await expect(responseSuccessInterceptor(response)).rejects.toThrow('auth expired')
 
       expect(localStorage.getItem('token')).toBeNull()
       expect(localStorage.getItem('playerId')).toBeNull()
@@ -183,9 +173,7 @@ describe('api/index.ts', () => {
 
       const response = { data: { code: 200, message: 'AUTH_EXPIRED' } }
 
-      await expect(responseSuccessInterceptor(response)).rejects.toThrow(
-        'auth expired',
-      )
+      await expect(responseSuccessInterceptor(response)).rejects.toThrow('auth expired')
 
       expect(localStorage.getItem('token')).toBeNull()
       expect(localStorage.getItem('playerId')).toBeNull()
@@ -197,9 +185,7 @@ describe('api/index.ts', () => {
 
       const response = { data: { code: 401 } }
 
-      await expect(responseSuccessInterceptor(response)).rejects.toThrow(
-        'auth expired',
-      )
+      await expect(responseSuccessInterceptor(response)).rejects.toThrow('auth expired')
       expect(window.location.hash).toBe('#/welcome/login')
     })
   })
@@ -248,10 +234,10 @@ describe('api/index.ts', () => {
     it('login calls POST /player/login with credentials', () => {
       playerApi.login({ username: 'alice', password: 'secret' })
 
-      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith(
-        '/player/login',
-        { username: 'alice', password: 'secret' },
-      )
+      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith('/player/login', {
+        username: 'alice',
+        password: 'secret',
+      })
     })
 
     it('register calls POST /player/register with FormData and multipart header', () => {
@@ -260,11 +246,9 @@ describe('api/index.ts', () => {
 
       playerApi.register(formData)
 
-      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith(
-        '/player/register',
-        formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } },
-      )
+      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith('/player/register', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
     })
 
     it('getInfo sends playerId from localStorage', () => {
@@ -272,19 +256,13 @@ describe('api/index.ts', () => {
 
       playerApi.getInfo()
 
-      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith(
-        '/player/info',
-        { playerId: '5' },
-      )
+      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith('/player/info', { playerId: '5' })
     })
 
     it('getInfo sends null playerId when not in localStorage', () => {
       playerApi.getInfo()
 
-      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith(
-        '/player/info',
-        { playerId: null },
-      )
+      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith('/player/info', { playerId: null })
     })
 
     it('move sends playerId and direction', () => {
@@ -292,10 +270,10 @@ describe('api/index.ts', () => {
 
       playerApi.move('north')
 
-      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith(
-        '/player/move',
-        { playerId: '3', direction: 'north' },
-      )
+      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith('/player/move', {
+        playerId: '3',
+        direction: 'north',
+      })
     })
 
     it('getList calls GET /player/list', () => {
@@ -309,10 +287,7 @@ describe('api/index.ts', () => {
 
       playerApi.trans()
 
-      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith(
-        '/player/trans',
-        { playerId: '8' },
-      )
+      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith('/player/trans', { playerId: '8' })
     })
 
     it('back sends playerId', () => {
@@ -320,10 +295,7 @@ describe('api/index.ts', () => {
 
       playerApi.back()
 
-      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith(
-        '/player/back',
-        { playerId: '2' },
-      )
+      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith('/player/back', { playerId: '2' })
     })
 
     it('home sends playerId', () => {
@@ -331,10 +303,7 @@ describe('api/index.ts', () => {
 
       playerApi.home()
 
-      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith(
-        '/player/home',
-        { playerId: '6' },
-      )
+      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith('/player/home', { playerId: '6' })
     })
   })
 
@@ -347,10 +316,10 @@ describe('api/index.ts', () => {
 
       roomApi.getInfo(10)
 
-      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith(
-        '/room/info',
-        { playerId: '4', roomId: 10 },
-      )
+      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith('/room/info', {
+        playerId: '4',
+        roomId: 10,
+      })
     })
   })
 
@@ -363,10 +332,7 @@ describe('api/index.ts', () => {
 
       backpackApi.getList()
 
-      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith(
-        '/backpack/list',
-        { playerId: '1' },
-      )
+      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith('/backpack/list', { playerId: '1' })
     })
 
     it('pickItem sends playerId and itemId', () => {
@@ -374,10 +340,10 @@ describe('api/index.ts', () => {
 
       backpackApi.pickItem(42)
 
-      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith(
-        '/backpack/pick',
-        { playerId: '2', itemId: 42 },
-      )
+      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith('/backpack/pick', {
+        playerId: '2',
+        itemId: 42,
+      })
     })
 
     it('dropItem sends playerId and itemId', () => {
@@ -385,10 +351,10 @@ describe('api/index.ts', () => {
 
       backpackApi.dropItem(7)
 
-      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith(
-        '/backpack/throw',
-        { playerId: '3', itemId: 7 },
-      )
+      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith('/backpack/throw', {
+        playerId: '3',
+        itemId: 7,
+      })
     })
 
     it('useItem sends playerId and itemId', () => {
@@ -396,10 +362,10 @@ describe('api/index.ts', () => {
 
       backpackApi.useItem(99)
 
-      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith(
-        '/backpack/use',
-        { playerId: '5', itemId: 99 },
-      )
+      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith('/backpack/use', {
+        playerId: '5',
+        itemId: 99,
+      })
     })
   })
 
@@ -412,10 +378,7 @@ describe('api/index.ts', () => {
 
       gameApi.list()
 
-      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith(
-        '/game/list',
-        { playerId: '9' },
-      )
+      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith('/game/list', { playerId: '9' })
     })
 
     it('save sends playerId', () => {
@@ -423,28 +386,19 @@ describe('api/index.ts', () => {
 
       gameApi.save()
 
-      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith(
-        '/game/save',
-        { playerId: '10' },
-      )
+      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith('/game/save', { playerId: '10' })
     })
 
     it('load sends saveId', () => {
       gameApi.load({ saveId: 3 })
 
-      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith(
-        '/game/read',
-        { saveId: 3 },
-      )
+      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith('/game/read', { saveId: 3 })
     })
 
     it('delete sends params with saveId', () => {
       gameApi.delete({ saveId: 5 })
 
-      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith(
-        '/game/delete',
-        { saveId: 5 },
-      )
+      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith('/game/delete', { saveId: 5 })
     })
 
     it('new sends playerId', () => {
@@ -452,10 +406,7 @@ describe('api/index.ts', () => {
 
       gameApi.new()
 
-      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith(
-        '/game/new',
-        { playerId: '11' },
-      )
+      expect(mocks.mockAxiosInstance.post).toHaveBeenCalledWith('/game/new', { playerId: '11' })
     })
   })
 
