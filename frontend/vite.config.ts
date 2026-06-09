@@ -4,6 +4,7 @@ import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
 
 export default defineConfig({
+  base: '/wutcst/kai-fa-519601/',
   plugins: [vue()],
 
   resolve: {
@@ -36,7 +37,7 @@ export default defineConfig({
   },
 
   build: {
-    outDir: 'dist',
+    outDir: '../docs',
     assetsDir: 'assets',
     sourcemap: false,
     chunkSizeWarningLimit: 1500,

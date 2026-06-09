@@ -8,4 +8,5 @@ __pycache__/
 node_modules/
 dist/
 dev.txt
-old_frontend
+old_frontend/
+*.zip
