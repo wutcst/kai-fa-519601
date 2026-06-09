@@ -1,8 +1,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-    baseURL: 'http://127.0.0.1:8080/',
-    withCredentials: true
+    baseURL: 'https://backend-zuul--harry-hcx.replit.app'
 })
 
 // 全局请求拦截器：自动添加 Token（如果有的话）
