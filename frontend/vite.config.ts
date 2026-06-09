@@ -4,7 +4,7 @@ import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
 
 export default defineConfig({
-  base: '/wutcst/kai-fa-519601/',
+  base: '/kai-fa-519601/',
   plugins: [vue()],
 
   resolve: {
