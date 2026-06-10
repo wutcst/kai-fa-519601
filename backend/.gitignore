@@ -6,4 +6,13 @@ dist/
 .venv/
 venv/
 .idea/
+<<<<<<< HEAD
 .vscode/
+=======
+.vscode/
+*.db
+uploads/
+coverage.xml
+.coverage
+htmlcov/
+>>>>>>> master

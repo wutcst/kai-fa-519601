@@ -1,7 +1,7 @@
 1. **地图系统**：100 个房间，10×10 网格布局，房间之间通过上下左右四个方向连通
 2. **移动系统**：玩家通过 WASD 在房间间移动，每次移动消耗体力值
 3. **传送房间**：约 10% 的房间为传送房间，进入后随机传送到地图任意位置
-4. **回退功能**：支持回到上一个房间（R 键），使用 Redis 记录移动历史栈
+4. **回退功能**：支持回到上一个房间（R 键），使用 数据库保存 记录移动历史栈
 5. **回城功能**：一键返回入口大厅（H 键）
 
 6. **物品属性**：每个物品有名称、重量（占用空间）、价值三个属性
@@ -37,10 +37,10 @@
 | B4   | 统一响应 & 异常处理   | schemas/result.py + 全局异常 handler                         | B1     |
 | B5   | 玩家模块              | routers/player.py + services/player.py：login / register / info / list | B2-B4  |
 | B6   | 房间模块              | routers/room.py + services/room.py：info（含出口+物品）      | B2-B4  |
-| B7   | 移动 & 传送           | move / back / home / trans，Redis 存历史栈                   | B5, B6 |
+| B7   | 移动 & 传送           | move / back / home / trans，数据库存历史栈                   | B5, B6 |
 | B8   | 背包模块              | routers/backpack.py + services/backpack.py：list / pick / throw / use | B2-B4  |
 | B9   | 存档模块              | routers/game.py + services/game.py：new / save / read / list / delete | B2-B4  |
-| B10  | 文件上传              | 七牛云上传封装 utils/qiniu_upload.py                         | B1     |
+| B10  | 文件上传              | ~~七牛云上传封装 utils/qiniu_upload.py~~                        | B1     |
 | B11  | 单元测试              | tests/ 下 4 个 service 测试文件                              | B5-B9  |
 | B12  | CI/CD                 | GitHub Actions：ruff check + pytest + 打包部署               | B11    |
 
