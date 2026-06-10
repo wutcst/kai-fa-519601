@@ -1,163 +1,84 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: 'https://backend-zuul--harry-hcx.replit.app',
+  baseURL: '/api',
+  withCredentials: true,
 })
 
-// 全局请求拦截器：自动添加 Token（如果有的话）
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
-  },
-)
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
 
-// 响应拦截器：处理 401
-api.interceptors.response.use(
-  (response) => {
-    const payload = response.data
-    const isExpired =
-      payload?.code === 401 ||
-      payload?.message === 'auth expired' ||
-      payload?.message === 'AUTH_EXPIRED'
-
-    if (isExpired) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('playerId')
-      if (window.location.hash !== '#/welcome/login') {
-        window.location.hash = '#/welcome/login'
-      }
-      return Promise.reject(new Error('auth expired'))
-    }
-
-    return response
-  },
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('playerId')
-      if (window.location.hash !== '#/welcome/login') {
-        window.location.hash = '#/welcome/login'
-      }
-    }
-    return Promise.reject(error)
-  },
-)
-
-// 玩家相关接口
 export const playerApi = {
-  // 登录
   login: (data: { username: string; password: string }) => api.post('/player/login', data),
-  // 注册
-  register: (data: FormData) =>
-    api.post('/player/register', data, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
-  // 获取玩家信息
+  register: (data: FormData) => api.post('/player/register', data),
   getInfo: () => {
     const playerId = localStorage.getItem('playerId')
-    return api.post('/player/info', { playerId })
+    return api.post('/player/info', { player_id: Number(playerId) })
   },
-  // 移动
   move: (direction: string) => {
     const playerId = localStorage.getItem('playerId')
-    return api.post('/player/move', { playerId, direction })
+    return api.post('/player/move', { player_id: Number(playerId), direction })
   },
-  // 获取玩家列表
   getList: () => api.get('/player/list'),
-  // 传送
   trans: () => {
     const playerId = localStorage.getItem('playerId')
-    return api.post('/player/trans', { playerId })
+    return api.post('/player/trans', { player_id: Number(playerId) })
   },
-  // 返回上一个房间
   back: () => {
     const playerId = localStorage.getItem('playerId')
-    return api.post('/player/back', { playerId })
+    return api.post('/player/back', { player_id: Number(playerId) })
   },
-  // 回到初始房间
   home: () => {
     const playerId = localStorage.getItem('playerId')
-    return api.post('/player/home', { playerId })
+    return api.post('/player/home', { player_id: Number(playerId) })
   },
 }
 
-// 房间相关接口
 export const roomApi = {
-  // 获取房间信息
   getInfo: (roomId: number) => {
     const playerId = localStorage.getItem('playerId')
-    return api.post('/room/info', { playerId, roomId })
+    return api.post('/room/info', { player_id: Number(playerId), room_id: roomId })
   },
 }
 
-// 背包相关接口
 export const backpackApi = {
-  // 获取背包列表
   getList: () => {
     const playerId = localStorage.getItem('playerId')
-    return api.post('/backpack/list', { playerId })
+    return api.post('/backpack/list', { player_id: Number(playerId) })
   },
-  // 拾取物品
   pickItem: (itemId: number) => {
     const playerId = localStorage.getItem('playerId')
-    return api.post('/backpack/pick', { playerId, itemId })
+    return api.post('/backpack/pick', { player_id: Number(playerId), item_id: itemId })
   },
-  // 丢弃物品
   dropItem: (itemId: number) => {
     const playerId = localStorage.getItem('playerId')
-    return api.post('/backpack/throw', { playerId, itemId })
+    return api.post('/backpack/throw', { player_id: Number(playerId), item_id: itemId })
   },
-  // 使用物品
   useItem: (itemId: number) => {
     const playerId = localStorage.getItem('playerId')
-    return api.post('/backpack/use', { playerId, itemId })
+    return api.post('/backpack/use', { player_id: Number(playerId), item_id: itemId })
   },
 }
 
 export const gameApi = {
-  /**
-   * 拉取当前玩家的存档列表
-   */
-  list: () => {
+  getList: () => {
     const playerId = localStorage.getItem('playerId')
-    return api.post('/game/list', { playerId })
+    return api.post('/game/list', { player_id: Number(playerId) })
   },
-
-  /**
-   * 保存当前玩家的存档
-   */
   save: () => {
     const playerId = localStorage.getItem('playerId')
-    return api.post('/game/save', { playerId })
+    return api.post('/game/save', { player_id: Number(playerId) })
   },
-
-  /**
-   * 读取指定存档
-   */
-  load: (params: { saveId: number }) => {
-    return api.post('/game/read', params)
-  },
-
-  /**
-   * 删除指定存档
-   */
-  delete: (params: { saveId: number }) => {
-    return api.post('/game/delete', params)
-  },
-
-  /**
-   * 新建游戏
-   */
+  read: (saveId: number) => api.post('/game/read', { save_id: saveId }),
+  delete: (saveId: number) => api.post('/game/delete', { save_id: saveId }),
   new: () => {
     const playerId = localStorage.getItem('playerId')
-    return api.post('/game/new', { playerId })
+    return api.post('/game/new', { player_id: Number(playerId) })
   },
 }
 
