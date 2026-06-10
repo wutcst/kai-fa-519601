@@ -24,7 +24,7 @@ const routes = [
       {
         path: 'login',
         name: 'Login',
-        component: () => import('@/views/login.vue'), // 登录页
+        component: () => import('@/views/Login.vue'), // 登录页
       },
       {
         path: 'archive',
