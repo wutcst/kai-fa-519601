@@ -7,3 +7,6 @@ frontend-old/
 __pycache__/
 node_modules/
 dist/
+dev.txt
+old_frontend/
+*.zip
