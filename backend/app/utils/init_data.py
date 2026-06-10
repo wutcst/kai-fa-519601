@@ -1,7 +1,6 @@
 import random
 
 from sqlalchemy import select, delete, func
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import async_session
 from app.models.room import Room
@@ -9,8 +8,13 @@ from app.models.item import Item
 from app.models.room_item import RoomItem
 
 ROOM_NAMES = [
-    "古书图书馆", "炼金实验室", "兵器库", "机关走廊",
-    "监狱牢房", "秘密宝藏室", "最终祭坛",
+    "古书图书馆",
+    "炼金实验室",
+    "兵器库",
+    "机关走廊",
+    "监狱牢房",
+    "秘密宝藏室",
+    "最终祭坛",
 ]
 
 ITEM_POOL = [
@@ -62,7 +66,9 @@ async def init_game_data():
 
             row, col = i // GRID_WIDTH, i % GRID_WIDTH
             room.room_up_id = rooms[i - GRID_WIDTH].room_id if row > 0 else None
-            room.room_down_id = rooms[i + GRID_WIDTH].room_id if row < GRID_WIDTH - 1 else None
+            room.room_down_id = (
+                rooms[i + GRID_WIDTH].room_id if row < GRID_WIDTH - 1 else None
+            )
             room.room_left_id = rooms[i - 1].room_id if col > 0 else None
             room.room_right_id = rooms[i + 1].room_id if col < GRID_WIDTH - 1 else None
 

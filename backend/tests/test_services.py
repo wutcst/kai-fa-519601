@@ -1,6 +1,7 @@
 """
 直接调用 service 函数的单元测试，覆盖 HTTP 测试无法追踪到的 service 层代码。
 """
+
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,7 +10,6 @@ from app.models.backpack import Backpack, BackpackItem
 from app.models.room import Room
 from app.models.item import Item
 from app.models.room_item import RoomItem
-from app.models.save_record import SaveRecord
 from app.services import player_service, backpack_service, room_service, game_service
 from app.utils import room_history_store
 
@@ -23,7 +23,9 @@ async def _make_room(db: AsyncSession, name: str = "hall") -> Room:
     return room
 
 
-async def _make_player(db: AsyncSession, room_id: int, name: str = "u") -> tuple[Player, Backpack]:
+async def _make_player(
+    db: AsyncSession, room_id: int, name: str = "u"
+) -> tuple[Player, Backpack]:
     p = Player(
         player_name=name,
         player_password="pw",
@@ -44,6 +46,7 @@ async def _make_player(db: AsyncSession, room_id: int, name: str = "u") -> tuple
 # ---------------------------------------------------------------------------
 # player_service
 # ---------------------------------------------------------------------------
+
 
 async def test_service_login_success(db: AsyncSession):
     room = await _make_room(db)
@@ -199,6 +202,7 @@ async def test_service_update_score(db: AsyncSession):
 # ---------------------------------------------------------------------------
 # backpack_service
 # ---------------------------------------------------------------------------
+
 
 async def test_service_get_backpack(db: AsyncSession):
     room = await _make_room(db)
@@ -375,6 +379,7 @@ async def test_service_use_item_not_found(db: AsyncSession):
 # room_service
 # ---------------------------------------------------------------------------
 
+
 async def test_service_get_room_info(db: AsyncSession):
     room = await _make_room(db, "宝库")
     item = Item(item_name="宝剑", item_size=30, item_value=80)
@@ -404,6 +409,7 @@ async def test_service_get_room_info_not_found(db: AsyncSession):
 # ---------------------------------------------------------------------------
 # game_service
 # ---------------------------------------------------------------------------
+
 
 async def test_service_save_and_list(db: AsyncSession):
     room = await _make_room(db)
@@ -495,11 +501,14 @@ async def test_service_new_game_not_found(db: AsyncSession):
 # room_history_store
 # ---------------------------------------------------------------------------
 
+
 async def test_room_history_push_pop(db: AsyncSession):
     room = await _make_room(db)
     p, bp = await _make_player(db, room.room_id, "hist")
 
-    await room_history_store.push_room_history(db, p.player_id, bp.backpack_id, room.room_id)
+    await room_history_store.push_room_history(
+        db, p.player_id, bp.backpack_id, room.room_id
+    )
     await db.flush()
 
     assert await room_history_store.has_room_history(db, p.player_id, bp.backpack_id)
@@ -507,7 +516,9 @@ async def test_room_history_push_pop(db: AsyncSession):
     popped = await room_history_store.pop_room_history(db, p.player_id, bp.backpack_id)
     assert popped == room.room_id
 
-    assert not await room_history_store.has_room_history(db, p.player_id, bp.backpack_id)
+    assert not await room_history_store.has_room_history(
+        db, p.player_id, bp.backpack_id
+    )
 
 
 async def test_room_history_pop_empty(db: AsyncSession):
