@@ -1,8 +1,10 @@
 <template>
-  <router-view />
+  <div id="app">
+    <router-view />
+  </div>
 </template>
 
-<script setup lang="ts"></script>
+<script lang="ts" setup></script>
 
 <style>
 * {
@@ -11,10 +13,10 @@
   box-sizing: border-box;
 }
 
-html,
-body,
 #app {
-  width: 100%;
-  height: 100%;
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #3e2723;
 }
 </style>

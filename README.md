@@ -138,3 +138,6 @@ refactor: 重构
 
 ---
 
+## 文档入口
+
+- 接口文档：[docs/api.md](docs/api.md)

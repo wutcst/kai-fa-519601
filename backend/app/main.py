@@ -1,10 +1,13 @@
-from contextlib import asynccontextmanager
-from pathlib import Path
-
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 
+<<<<<<< HEAD
+app = FastAPI(title="Zuulventurers Backend")
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+=======
 from app.config import settings
 from app.database import init_db
 from app.routers import player, room, backpack, game
@@ -41,3 +44,4 @@ app.include_router(game.router, prefix="/game", tags=["game"])
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.main:app", host="0.0.0.0", port=8080, reload=True)
+>>>>>>> master
