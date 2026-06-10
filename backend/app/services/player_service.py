@@ -1,8 +1,11 @@
 import random
+import uuid
+from pathlib import Path
 
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.models.player import Player
 from app.models.backpack import Backpack
 from app.models.room import Room
@@ -11,7 +14,14 @@ from app.schemas.player import (
 )
 from app.schemas.result import Result
 from app.utils import room_history_store
-from app.utils.qiniu_upload import save_avatar
+
+
+def _save_avatar(file_bytes: bytes, player_name: str) -> str:
+    upload_dir = Path(settings.upload_dir)
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    filename = f"{player_name}_{uuid.uuid4().hex[:8]}.png"
+    (upload_dir / filename).write_bytes(file_bytes)
+    return f"/uploads/{filename}"
 
 
 async def login(db: AsyncSession, username: str, password: str):
@@ -35,7 +45,7 @@ async def register(db: AsyncSession, player_name: str, password: str, avatar_byt
     avatar_url = ""
     if avatar_bytes:
         try:
-            avatar_url = save_avatar(avatar_bytes, player_name)
+            avatar_url = _save_avatar(avatar_bytes, player_name)
         except Exception as e:
             return Result.error(500, f"avatar upload failed: {e}")
 
