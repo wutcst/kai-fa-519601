@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import select, delete as sa_delete
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.player import Player
@@ -27,7 +27,8 @@ async def list_saves(db: AsyncSession, player_id: int):
             player_stamina=r.player_stamina,
             player_room_id=r.player_room_id,
             player_backpack_id=r.player_backpack_id,
-        ) for r in records
+        )
+        for r in records
     ]
     return Result.success(data, "all save records fetched successfully")
 
